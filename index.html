@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Astra Blogs Library Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 24px;
+      line-height: 1.5;
+    }
+    button {
+      margin: 8px 0;
+      padding: 10px 14px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    pre {
+      background: #f4f4f4;
+      border: 1px solid #ddd;
+      padding: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .block {
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      margin: 8px 0 4px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Astra Blogs Library Demo</h1>
+  <p>This demo loads <code>astra-blogs-lib.js</code> and calls library methods using a provided token and secret.</p>
+
+  <div class="block">
+    <label for="secretInput">Secret</label>
+    <input id="secretInput" type="text" value="demo-secret" />
+  </div>
+
+  <div class="block">
+    <label for="tokenInput">Encrypted token</label>
+    <input id="tokenInput" type="text" placeholder="Paste your encrypted token here" />
+  </div>
+
+  <div class="block">
+    <button id="fetchTokenConfig">Fetch Blogs with Token + Secret</button>
+    <button id="fetchInvalid">Fetch with Invalid Config</button>
+  </div>
+
+  <div class="block">
+    <h2>Result</h2>
+    <pre id="output">Click a button to run a demo.</pre>
+  </div>
+
+  <div class="block">
+    <h2>Library Examples</h2>
+    <p>Use these examples with a valid <code>token</code> and <code>secret</code> that decrypt to the repo configuration.</p>
+    <pre><code>const lib = new AstraBlogsLib({
+  token,
+  secret,
+  indexCacheTTL: 600000,      // 10 minutes
+  contentCacheTTL: 86400000,  // 24 hours
+  useCache: true,
+  storage: window.localStorage
+});</code></pre>
+
+    <button id="execFullInit">Run full init example</button>
+    <h3>Full token/secret initialization</h3>
+    <p>Create a library instance with optional runtime settings, decrypt the config, and fetch blogs:</p>
+    <pre><code>async function runDemo(token, secret) {
+  const lib = new AstraBlogsLib({
+    token,
+    secret,
+    indexCacheTTL: 600000,
+    contentCacheTTL: 86400000,
+    useCache: true,
+    storage: window.localStorage
+  });
+
+  // Fetch the blog list from GitHub repository
+  const blogs = await lib.getAllBlogs();
+  console.log('Blogs:', blogs);
+
+  if (blogs.length > 0) {
+    const firstSlug = blogs[0].slug;
+    const blogContent = await lib.getBlogContent(firstSlug);
+    console.log('Blog content:', blogContent);
+  }
+
+  console.log('Current config:', lib.getConfig());
+}
+
+runDemo(token, secret).catch(console.error);</code></pre>
+
+    <button id="execGetAllBlogs">Run getAllBlogs()</button>
+    <h3>getAllBlogs()</h3>
+    <p>Fetch the full index of published blog metadata from the configured repository. This returns an array of blog objects with title, slug, tags, and other metadata.</p>
+    <pre><code>const blogs = await lib.getAllBlogs();
+console.log(blogs);</code></pre>
+
+    <button id="execGetBlogContent">Run getBlogContent('first blog slug')</button>
+    <h3>getBlogContent(slug)</h3>
+    <p>Fetch the markdown content for a single blog by slug. The result includes parsed YAML frontmatter metadata and the rendered markdown body.</p>
+    <pre><code>const blog = await lib.getBlogContent('getting-started-with-react');
+console.log(blog.metadata, blog.content);</code></pre>
+
+    <button id="execGetRecommendations">Run getRecommendations()</button>
+    <h3>getRecommendations(blogs, options)</h3>
+    <p>Generate a ranked list of blog recommendations using tag overlap and optional user preference weights.</p>
+    <pre><code>const recommendations = lib.getRecommendations(blogs, {
+  count: 5,
+  userPreferences: { react: 3, javascript: 2 }
+});
+console.log(recommendations);</code></pre>
+
+    <button id="execTrackReadBlog">Run trackReadBlog()</button>
+    <h3>trackReadBlog(tags, weight)</h3>
+    <p>Record a reading interaction with blog tags to build or update personal recommendation preferences in storage.</p>
+    <pre><code>lib.trackReadBlog(['react', 'web'], 1);
+const prefs = lib.getUserPreferences();
+console.log(prefs);</code></pre>
+
+    <button id="execGetUserPreferences">Run getUserPreferences()</button>
+    <h3>getUserPreferences()</h3>
+    <p>Read the stored user preference profile that is used to personalize recommendations.</p>
+    <pre><code>const preferences = lib.getUserPreferences();
+console.log(preferences);</code></pre>
+
+    <button id="execClearUserPreferences">Run clearUserPreferences()</button>
+    <h3>clearUserPreferences()</h3>
+    <p>Clear any stored reading preferences from the configured storage mechanism.</p>
+    <pre><code>lib.clearUserPreferences();</code></pre>
+
+    <button id="execSearchBlogs">Run searchBlogs()</button>
+    <h3>searchBlogs(blogs, query, options)</h3>
+    <p>Filter a list of blogs by query text across title, description, tags, or other searchable fields.</p>
+    <pre><code>const filtered = lib.searchBlogs(blogs, 'react', {
+  searchFields: ['title', 'description', 'tags']
+});
+console.log(filtered);</code></pre>
+
+    <button id="execFilterByTags">Run filterByTags()</button>
+    <h3>filterByTags(blogs, tagFilter, mode)</h3>
+    <p>Filter blogs by one or more tags, using either any-match or all-match logic.</p>
+    <pre><code>const filteredTags = lib.filterByTags(blogs, ['react', 'javascript'], 'any');
+console.log(filteredTags);</code></pre>
+
+    <button id="execGetConfig">Run getConfig()</button>
+    <h3>getConfig()</h3>
+    <p>Return the current library configuration, excluding decrypted secrets.</p>
+    <pre><code>console.log(lib.getConfig());</code></pre>
+
+    <button id="execSetConfig">Run setConfig({ useCache: false })</button>
+    <h3>setConfig(newConfig)</h3>
+    <p>Update runtime settings such as cache TTL or storage options without reinitializing the library.</p>
+    <pre><code>lib.setConfig({ useCache: false });</code></pre>
+
+    <button id="execClearCache">Run clearCache('astra_blog_content_')</button>
+    <h3>clearCache(pattern)</h3>
+    <p>Clear cached blog data from storage. Provide a key pattern to remove specific cache entries.</p>
+    <pre><code>lib.clearCache('astra_blog_content_');</code></pre>
+  </div>
+
+  <script src="./astra-blogs-lib.js"></script>
+  <script>
+    let demoLib = null;
+    let demoToken = '';
+    let demoSecret = '';
+
+    function setOutput(value) {
+      document.getElementById('output').textContent = value;
+    }
+
+    function getTokenSecret() {
+      return {
+        token: document.getElementById('tokenInput').value.trim(),
+        secret: document.getElementById('secretInput').value.trim()
+      };
+    }
+
+    async function getDemoLib() {
+      const { token, secret } = getTokenSecret();
+      if (!token || !secret) {
+        throw new Error('Please provide both token and secret values.');
+      }
+      if (demoLib && demoToken === token && demoSecret === secret) {
+        return demoLib;
+      }
+      demoLib = new AstraBlogsLib({ token, secret });
+      demoToken = token;
+      demoSecret = secret;
+      return demoLib;
+    }
+
+    async function execFullInit() {
+      try {
+        const lib = await getDemoLib();
+        setOutput('Running full initialization...');
+
+        const blogs = await lib.getAllBlogs();
+        const result = { blogs };
+
+        if (blogs.length > 0) {
+          const firstSlug = blogs[0].slug;
+          result.blogContent = await lib.getBlogContent(firstSlug);
+        }
+
+        result.config = lib.getConfig();
+        setOutput(JSON.stringify(result, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execGetAllBlogs() {
+      try {
+        const lib = await getDemoLib();
+        const blogs = await lib.getAllBlogs();
+        setOutput(JSON.stringify(blogs, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execGetBlogContent() {
+      try {
+        const lib = await getDemoLib();
+        const blogs = await lib.getAllBlogs();
+        if (!blogs.length) {
+          throw new Error('No blogs found. Run getAllBlogs first.');
+        }
+        const blog = await lib.getBlogContent(blogs[0].slug);
+        setOutput(JSON.stringify(blog, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execGetRecommendations() {
+      try {
+        const lib = await getDemoLib();
+        const blogs = await lib.getAllBlogs();
+        const recommendations = lib.getRecommendations(blogs, {
+          count: 5,
+          userPreferences: { react: 3, javascript: 2 }
+        });
+        setOutput(JSON.stringify(recommendations, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execTrackReadBlog() {
+      try {
+        const lib = await getDemoLib();
+        lib.trackReadBlog(['react', 'web'], 1);
+        const prefs = lib.getUserPreferences();
+        setOutput(JSON.stringify(prefs, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execGetUserPreferences() {
+      try {
+        const lib = await getDemoLib();
+        const preferences = lib.getUserPreferences();
+        setOutput(JSON.stringify(preferences, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execClearUserPreferences() {
+      try {
+        const lib = await getDemoLib();
+        lib.clearUserPreferences();
+        setOutput('User preferences cleared.');
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execSearchBlogs() {
+      try {
+        const lib = await getDemoLib();
+        const blogs = await lib.getAllBlogs();
+        const filtered = lib.searchBlogs(blogs, 'react', {
+          searchFields: ['title', 'description', 'tags']
+        });
+        setOutput(JSON.stringify(filtered, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execFilterByTags() {
+      try {
+        const lib = await getDemoLib();
+        const blogs = await lib.getAllBlogs();
+        const filteredTags = lib.filterByTags(blogs, ['react', 'javascript'], 'any');
+        setOutput(JSON.stringify(filteredTags, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execGetConfig() {
+      try {
+        const lib = await getDemoLib();
+        const config = lib.getConfig();
+        setOutput(JSON.stringify(config, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execSetConfig() {
+      try {
+        const lib = await getDemoLib();
+        lib.setConfig({ useCache: false });
+        setOutput(JSON.stringify(lib.getConfig(), null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function execClearCache() {
+      try {
+        const lib = await getDemoLib();
+        lib.clearCache('astra_blog_content_');
+        setOutput('Cache cleared for pattern: astra_blog_content_');
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function fetchWithTokenConfig() {
+      const token = document.getElementById('tokenInput').value.trim();
+      const secret = document.getElementById('secretInput').value.trim();
+
+      if (!token || !secret) {
+        setOutput('Please provide both token and secret values.');
+        return;
+      }
+
+      try {
+        const lib = new AstraBlogsLib({ token, secret });
+        const blogs = await lib.getAllBlogs();
+        setOutput(JSON.stringify({ token, secret, blogs }, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function fetchWithInvalidConfig() {
+      const lib = new AstraBlogsLib({});
+
+      setOutput('Fetching blogs with invalid config...');
+      try {
+        const blogs = await lib.getAllBlogs();
+        setOutput(JSON.stringify({ blogs }, null, 2));
+      } catch (error) {
+        setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    document.getElementById('fetchTokenConfig').addEventListener('click', fetchWithTokenConfig);
+    document.getElementById('fetchInvalid').addEventListener('click', fetchWithInvalidConfig);
+    document.getElementById('execFullInit').addEventListener('click', execFullInit);
+    document.getElementById('execGetAllBlogs').addEventListener('click', execGetAllBlogs);
+    document.getElementById('execGetBlogContent').addEventListener('click', execGetBlogContent);
+    document.getElementById('execGetRecommendations').addEventListener('click', execGetRecommendations);
+    document.getElementById('execTrackReadBlog').addEventListener('click', execTrackReadBlog);
+    document.getElementById('execGetUserPreferences').addEventListener('click', execGetUserPreferences);
+    document.getElementById('execClearUserPreferences').addEventListener('click', execClearUserPreferences);
+    document.getElementById('execSearchBlogs').addEventListener('click', execSearchBlogs);
+    document.getElementById('execFilterByTags').addEventListener('click', execFilterByTags);
+    document.getElementById('execGetConfig').addEventListener('click', execGetConfig);
+    document.getElementById('execSetConfig').addEventListener('click', execSetConfig);
+    document.getElementById('execClearCache').addEventListener('click', execClearCache);
+  </script>
+</body>
+</html>

@@ -16,20 +16,19 @@ class AstraBlogsLib {
   /**
    * Initialize the Astra Blogs Library
    * @param {Object} config - Configuration object
-   * @param {string} config.owner - GitHub repository owner
-   * @param {string} config.repo - GitHub repository name
-   * @param {string} [config.branch='main'] - GitHub branch name
-   * @param {string} [config.githubToken] - GitHub authentication token (optional)
+   * @param {string} [config.token] - Encrypted configuration token containing owner/repo/branch/githubToken
+   * @param {string} [config.secret] - Secret used to decrypt the encrypted token
    * @param {number} [config.indexCacheTTL=3600000] - Cache TTL for blog index in milliseconds (default: 1 hour)
    * @param {number} [config.contentCacheTTL=86400000] - Cache TTL for blog content in milliseconds (default: 24 hours)
    * @param {Object} [config.storage=localStorage] - Storage mechanism (must have getItem/setItem)
+   * @param {boolean} [config.useCache=true] - Whether to use local storage caching
    */
   constructor(config = {}) {
     this.config = {
-      owner: config.owner || 'Santhosh20112003',
-      repo: config.repo || 'rtym-blog-files',
-      branch: config.branch || 'main',
-      githubToken: config.githubToken || null,
+      owner: null,
+      repo: null,
+      branch: null,
+      githubToken: null,
       indexCacheTTL: config.indexCacheTTL || 3600000, // 1 hour
       contentCacheTTL: config.contentCacheTTL || 86400000, // 24 hours
       storage: config.storage || (typeof window !== 'undefined' ? window.localStorage : null),
@@ -37,6 +36,13 @@ class AstraBlogsLib {
     };
 
     this.baseURL = 'https://api.github.com';
+    this._decryptionPromise = null;
+
+    if (config.token && config.secret) {
+      this._decryptionPromise = this._decryptConfig(config.token, config.secret);
+    } else if (config.owner || config.repo || config.branch || config.githubToken) {
+      throw new Error('Direct configuration of owner/repo/branch/githubToken is not allowed. Provide encrypted token and secret.');
+    }
   }
 
   /**
@@ -55,6 +61,68 @@ class AstraBlogsLib {
     }
 
     return headers;
+  }
+
+  async _applyDecryptedConfig() {
+    if (!this._decryptionPromise) return;
+
+    try {
+      await this._decryptionPromise;
+    } catch (error) {
+      console.error('Error decrypting configuration token:', error);
+    } finally {
+      this._decryptionPromise = null;
+    }
+  }
+
+  _getMissingConfigKeys() {
+    return ['owner', 'repo', 'branch'].filter(key => !this.config[key]);
+  }
+
+  async _decryptConfig(token, secret) {
+    if (typeof window === 'undefined' || !window.crypto?.subtle) {
+      throw new Error('Web Crypto API is required to decrypt configuration values');
+    }
+
+    const decrypted = await this._aesGcmDecrypt(token, secret);
+    if (decrypted && typeof decrypted === 'object') {
+      const allowedKeys = ['owner', 'repo', 'branch', 'githubToken'];
+      const decryptedConfig = {};
+
+      allowedKeys.forEach(key => {
+        if (decrypted[key]) {
+          decryptedConfig[key] = decrypted[key];
+        }
+      });
+
+      this.config = { ...this.config, ...decryptedConfig };
+      console.log('🔐 Decrypted configuration values successfully');
+    }
+  }
+
+  async _aesGcmDecrypt(token, secret) {
+    const enc = new TextEncoder();
+    const hash = await window.crypto.subtle.digest('SHA-256', enc.encode(secret));
+    const key = await window.crypto.subtle.importKey(
+      'raw',
+      hash,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+
+    const [ivHex, encryptedHex] = token.split(':');
+    const iv = Uint8Array.from(ivHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    const encryptedBuffer = Uint8Array.from(encryptedHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+    const decryptedBuffer = await window.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      encryptedBuffer
+    );
+
+    const dec = new TextDecoder();
+    return JSON.parse(dec.decode(decryptedBuffer));
   }
 
   /**
@@ -152,6 +220,14 @@ class AstraBlogsLib {
    * // ]
    */
   async getAllBlogs(options = {}) {
+    await this._applyDecryptedConfig();
+
+    const missingKeys = this._getMissingConfigKeys();
+    if (missingKeys.length) {
+      console.error(`Invalid configuration key(s): ${missingKeys.join(', ')}`);
+      return [];
+    }
+
     const { useCache = true, forceFresh = false } = options;
     const cacheKey = 'astra_blogs_index_cache';
 
@@ -229,6 +305,14 @@ class AstraBlogsLib {
    * // }
    */
   async getBlogContent(slug, options = {}) {
+    await this._applyDecryptedConfig();
+
+    const missingKeys = this._getMissingConfigKeys();
+    if (missingKeys.length) {
+      console.error(`Invalid configuration key(s): ${missingKeys.join(', ')}`);
+      return null;
+    }
+
     const { useCache = true, forceFresh = false, parseYAML = true } = options;
     const cacheKey = `astra_blog_content_${slug}`;
 

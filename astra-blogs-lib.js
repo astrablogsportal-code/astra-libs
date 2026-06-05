@@ -13,26 +13,7 @@
  */
 
 class AstraBlogsLib {
-  static VERSION = '3.1.5';
-
-  static _resolvePackageVersion() {
-    if (AstraBlogsLib.VERSION && AstraBlogsLib.VERSION !== '_VERSION_') {
-      return AstraBlogsLib.VERSION;
-    }
-
-    if (typeof module !== 'undefined' && typeof require === 'function') {
-      try {
-        const pkg = require('./package.json');
-        if (pkg && typeof pkg.version === 'string') {
-          return pkg.version;
-        }
-      } catch (error) {
-        // Ignore missing package.json in browser or malformed install.
-      }
-    }
-
-    return AstraBlogsLib.VERSION;
-  }
+  static VERSION = '_VERSION_';
 
   /**
    * Initialize the Astra Blogs Library
@@ -90,7 +71,7 @@ class AstraBlogsLib {
    * @returns {string} Library version string
    */
   getVersion() {
-    return AstraBlogsLib._resolvePackageVersion();
+    return AstraBlogsLib.VERSION;
   }
 
   /**

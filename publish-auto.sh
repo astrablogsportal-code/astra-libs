@@ -103,10 +103,7 @@ npm pack --dry-run
 echo "Creating tarball..."
 npm pack
 
-EXTRA_FLAGS=""
-if [ "$DIST_TAG" != "latest" ]; then
-  EXTRA_FLAGS="--tag $DIST_TAG"
-fi
+EXTRA_FLAGS="--tag $DIST_TAG"
 
 echo "Publishing to npm with tag: ${DIST_TAG}"
 npm publish $EXTRA_FLAGS

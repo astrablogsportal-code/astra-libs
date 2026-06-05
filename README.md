@@ -44,13 +44,12 @@ const blogsLib = new AstraBlogsLib();
 ## Quick Start
 
 ```js
-const blogsLib = new AstraBlogsLib();
+const blogsLib = new AstraBlogsLib({
+  token: 'encrypted-token',
+  secret: 'decryption-secret'
+});
 
-// Optionally configure runtime settings
 blogsLib.setConfig({
-  owner: 'your-username',
-  repo: 'your-blog-repo',
-  branch: 'main',
   indexCacheTTL: 3600000,
   contentCacheTTL: 86400000,
   useCache: true
@@ -64,7 +63,7 @@ console.log('content metadata', blog.metadata);
 console.log('markdown body', blog.content);
 ```
 
-> Note: `AstraBlogsLib` expects decryption-based initialization using `token` and `secret`, or runtime configuration via `setConfig()`.
+> Note: `AstraBlogsLib` expects decryption-based initialization using `token` and `secret`.
 
 ## Repository Layout
 
@@ -131,7 +130,7 @@ Creates a library instance.
 - `storage` - storage backend implementing `getItem`/`setItem`/`removeItem`
 - `useCache` - enable or disable caching
 
-> Direct repository settings are not accepted in the constructor. Use `setConfig()` to apply those settings at runtime.
+> Direct repository settings are not accepted in the constructor. Use `token` and `secret` only for initialization, and use `setConfig()` only for non-sensitive runtime settings like cache control.
 
 ### `getVersion()`
 
@@ -336,11 +335,15 @@ This is useful for debugging and support when you need to know exactly which lib
 ## Example: Full workflow
 
 ```js
-const blogsLib = new AstraBlogsLib();
+const blogsLib = new AstraBlogsLib({
+  token: 'encrypted-token',
+  secret: 'decryption-secret'
+});
+
 blogsLib.setConfig({
-  owner: 'your-username',
-  repo: 'your-blog-repo',
-  branch: 'main'
+  indexCacheTTL: 3600000,
+  contentCacheTTL: 86400000,
+  useCache: true
 });
 
 blogsLib.on('fetchStarted', data => console.log('Fetch started:', data));

@@ -18,12 +18,13 @@ class AstraBlogsLib {
   /**
    * Initialize the Astra Blogs Library
    * @param {Object} config - Configuration object
-   * @param {string} [config.token] - Encrypted configuration token containing owner/repo/branch/githubToken
+   * @param {string} [config.token] - Encrypted initialization token that contains owner/repo/branch/githubToken
    * @param {string} [config.secret] - Secret used to decrypt the encrypted token
    * @param {number} [config.indexCacheTTL=3600000] - Cache TTL for blog index in milliseconds (default: 1 hour)
    * @param {number} [config.contentCacheTTL=86400000] - Cache TTL for blog content in milliseconds (default: 24 hours)
-   * @param {Object} [config.storage=localStorage] - Storage mechanism (must have getItem/setItem)
+   * @param {Object} [config.storage=localStorage] - Storage mechanism (must have getItem/setItem/removeItem)
    * @param {boolean} [config.useCache=true] - Whether to use local storage caching
+   * @throws {Error} When direct owner/repo/branch/githubToken config is supplied
    */
   constructor(config = {}) {
     this.config = {
@@ -940,8 +941,25 @@ class AstraBlogsLib {
   /**
    * Update library configuration
    * @param {Object} newConfig - Partial configuration to update
+   * @param {number} [newConfig.indexCacheTTL] - Cache TTL for blog index
+   * @param {number} [newConfig.contentCacheTTL] - Cache TTL for blog content
+   * @param {Object} [newConfig.storage] - Storage backend for cache and preferences
+   * @param {boolean} [newConfig.useCache] - Enable or disable caching
+   * @throws {Error} When direct owner/repo/branch/githubToken/token/secret config is supplied
    */
   setConfig(newConfig) {
+    if (!newConfig || typeof newConfig !== 'object') return;
+
+    const restrictedKeys = ['owner', 'repo', 'branch', 'githubToken', 'token', 'secret'];
+    const invalidKeys = restrictedKeys.filter(key => key in newConfig);
+
+    if (invalidKeys.length > 0) {
+      throw new Error(
+        `Direct configuration of sensitive values is not allowed (${invalidKeys.join(', ')}). ` +
+        'Use encrypted token and secret only.'
+      );
+    }
+
     this.config = { ...this.config, ...newConfig };
     console.log('⚙️ Configuration updated');
   }

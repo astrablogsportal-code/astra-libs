@@ -13,28 +13,15 @@
  */
 export interface AstraBlogsConfig {
   /**
-   * GitHub username or organization name
-   * @default 'Santhosh20112003'
+   * Encrypted initialization token containing owner/repo/branch/githubToken
+   * This must be decrypted with `secret` in the browser at runtime.
    */
-  owner?: string;
+  token?: string;
 
   /**
-   * GitHub repository name
-   * @default 'rtym-blog-files'
+   * Secret used to decrypt the encrypted token
    */
-  repo?: string;
-
-  /**
-   * GitHub branch name
-   * @default 'main'
-   */
-  branch?: string;
-
-  /**
-   * GitHub Personal Access Token (optional)
-   * Increases rate limit from 60 to 5000 requests/hour
-   */
-  githubToken?: string;
+  secret?: string;
 
   /**
    * Cache time-to-live for blog index in milliseconds
@@ -59,6 +46,20 @@ export interface AstraBlogsConfig {
    * @default true
    */
   useCache?: boolean;
+}
+
+/**
+ * Runtime configuration returned by getConfig()
+ */
+export interface AstraBlogsRuntimeConfig {
+  owner: string | null;
+  repo: string | null;
+  branch: string | null;
+  githubToken: string | null;
+  indexCacheTTL: number;
+  contentCacheTTL: number;
+  storage: Storage | null;
+  useCache: boolean;
 }
 
 /**
@@ -247,9 +248,8 @@ declare class AstraBlogsLib {
    * 
    * @example
    * const blogsLib = new AstraBlogsLib({
-   *   owner: 'your-username',
-   *   repo: 'your-blog-repo',
-   *   githubToken: 'ghp_...'
+   *   token: 'encrypted-token',
+   *   secret: 'decryption-secret'
    * });
    */
   constructor(config?: AstraBlogsConfig);
@@ -466,7 +466,7 @@ declare class AstraBlogsLib {
    * const config = blogsLib.getConfig();
    * console.log(config.owner, config.repo);
    */
-  getConfig(): Required<AstraBlogsConfig>;
+  getConfig(): AstraBlogsRuntimeConfig;
 
   /**
    * Update library configuration
@@ -475,11 +475,12 @@ declare class AstraBlogsLib {
    * 
    * @example
    * blogsLib.setConfig({
-   *   owner: 'new-owner',
-   *   githubToken: 'new-token'
+   *   indexCacheTTL: 3600000,
+   *   contentCacheTTL: 86400000,
+   *   useCache: true
    * });
    */
-  setConfig(newConfig: Partial<AstraBlogsConfig>): void;
+  setConfig(newConfig: Partial<Omit<AstraBlogsRuntimeConfig, 'owner' | 'repo' | 'branch' | 'githubToken'>>): void;
 }
 
 export default AstraBlogsLib;

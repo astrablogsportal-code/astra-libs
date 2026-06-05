@@ -1,6 +1,6 @@
 {
   "name": "astra-blogs-lib",
-  "version": "3.1.0",
+  "version": "3.1.2",
   "description": "A standalone JavaScript library for fetching and managing blog content from GitHub repositories. Framework-agnostic with support for React, Vue, Angular, Next.js, Node.js, and vanilla JavaScript.",
   "main": "astra-blogs-lib.js",
   "module": "astra-blogs-lib.js",
@@ -8,6 +8,7 @@
   "files": [
     "astra-blogs-lib.js",
     "astra-blogs-lib.d.ts",
+    "index.html",
     "README.md",
     "LICENSE"
   ],
@@ -39,12 +40,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/astra-blogs-lib"
+    "url": "https://github.com/astrablogsportal-code/astra-blogs-lib"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/astra-blogs-lib/issues"
+    "url": "https://github.com/astrablogsportal-code/astra-blogs-lib/issues"
   },
-  "homepage": "https://github.com/yourusername/astra-blogs-lib#readme",
+  "homepage": "https://github.com/astrablogsportal-code/astra-blogs-lib#readme",
   "engines": {
     "node": ">=12.0.0"
   },

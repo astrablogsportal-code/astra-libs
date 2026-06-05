@@ -1,6 +1,6 @@
 {
   "name": "astra-blogs-lib",
-  "version": "3.1.2",
+  "version": "3.1.3",
   "description": "A standalone JavaScript library for fetching and managing blog content from GitHub repositories. Framework-agnostic with support for React, Vue, Angular, Next.js, Node.js, and vanilla JavaScript.",
   "main": "astra-blogs-lib.js",
   "module": "astra-blogs-lib.js",

@@ -236,6 +236,11 @@ export type FilterMode = 'any' | 'all';
  */
 declare class AstraBlogsLib {
   /**
+   * Library version exposed as a static field
+   */
+  static VERSION: string;
+
+  /**
    * Initialize the Astra Blogs Library
    * 
    * @param config - Configuration object
@@ -262,6 +267,22 @@ declare class AstraBlogsLib {
   getAllBlogs(options?: FetchOptions): Promise<BlogMetadata[]>;
 
   /**
+   * Fetch all cover image URLs from the blog index
+   * 
+   * @param options - Fetch options
+   * @returns Promise resolving to array of unique cover image URLs
+   */
+  getAllCovers(options?: FetchOptions): Promise<string[]>;
+
+  /**
+   * Extract cover image URLs from an array of blog metadata
+   * 
+   * @param blogs - Array of blog metadata objects
+   * @returns Array of unique cover image URLs
+   */
+  getCoverUrls(blogs: BlogMetadata[]): string[];
+
+  /**
    * Fetch full content of a specific blog with markdown and YAML
    * 
    * @param slug - Blog slug/identifier
@@ -276,6 +297,59 @@ declare class AstraBlogsLib {
    * }
    */
   getBlogContent(slug: string, options?: FetchOptions): Promise<BlogContent | null>;
+
+  /**
+   * Get the current library version.
+   * @returns Version string
+   * @example
+   * console.log(blogsLib.getVersion());
+   */
+  getVersion(): string;
+
+  /**
+   * Convert markdown content to HTML and include default markdown styles.
+   *
+   * @param markdown - Raw markdown content to convert
+   * @param options - Conversion options
+   * @param options.includeStyles - Whether to include inline markdown styles in the returned HTML
+   * @returns Object containing rendered HTML and styled HTML
+   *
+   * @example
+   * const result = blogsLib.convertMarkdownToHtml(markdown);
+   * console.log(result.styledHtml);
+   */
+  convertMarkdownToHtml(
+    markdown: string,
+    options?: { includeStyles?: boolean }
+  ): { html: string; styledHtml: string };
+
+  /**
+   * Subscribe to a library event.
+   * @param event - Event name
+   * @param callback - Listener callback
+   */
+  on(event: string, callback: (data?: any) => void): void;
+
+  /**
+   * Unsubscribe from a library event.
+   * @param event - Event name
+   * @param callback - Specific listener to remove. If omitted, all listeners are removed.
+   */
+  off(event: string, callback?: (data?: any) => void): void;
+
+  /**
+   * Subscribe to a library event once.
+   * @param event - Event name
+   * @param callback - Listener callback
+   */
+  once(event: string, callback: (data?: any) => void): void;
+
+  /**
+   * Emit a library event.
+   * @param event - Event name
+   * @param data - Payload for listeners
+   */
+  emit(event: string, data?: any): void;
 
   /**
    * Search blogs by query string

@@ -16,6 +16,18 @@
       font-size: 1rem;
       cursor: pointer;
     }
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      margin: 8px 0;
+      white-space: pre;
+    }
     pre {
       background: #f4f4f4;
       border: 1px solid #ddd;
@@ -25,6 +37,14 @@
     }
     .block {
       margin-bottom: 24px;
+    }
+    .section-output {
+      background: #ffffff;
+      border: 1px solid #c8e1ff;
+      padding: 12px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     label {
       display: block;
@@ -61,6 +81,16 @@
   <div class="block">
     <h2>Result</h2>
     <pre id="output">Click a button to run a demo.</pre>
+  </div>
+
+  <div class="block">
+    <h2>Custom Code Playground</h2>
+    <p>Edit JavaScript code and execute it directly using the current demo library instance.</p>
+    <textarea id="customCode">const lib = await getDemoLib();
+const blogs = await lib.getAllBlogs();
+return blogs;</textarea>
+    <button id="runCustomCode">Run custom code</button>
+    <pre id="output-customCode" class="section-output">Custom code results will appear here.</pre>
   </div>
 
   <div class="block">
@@ -102,18 +132,58 @@
 }
 
 runDemo(token, secret).catch(console.error);</code></pre>
+    <pre id="output-fullInit" class="section-output">Result will appear here.</pre>
 
     <button id="execGetAllBlogs">Run getAllBlogs()</button>
     <h3>getAllBlogs()</h3>
     <p>Fetch the full index of published blog metadata from the configured repository. This returns an array of blog objects with title, slug, tags, and other metadata.</p>
     <pre><code>const blogs = await lib.getAllBlogs();
 console.log(blogs);</code></pre>
+    <pre id="output-getAllBlogs" class="section-output">Result will appear here.</pre>
+
+    <button id="execGetAllCovers">Run getAllCovers()</button>
+    <h3>getAllCovers()</h3>
+    <p>Fetch the set of unique cover image URLs for all blogs in the repository index.</p>
+    <pre><code>const coverUrls = await lib.getAllCovers();
+console.log(coverUrls);</code></pre>
+    <pre id="output-getAllCovers" class="section-output">Result will appear here.</pre>
+
+    <button id="execGetCoverUrls">Run getCoverUrls(blogs)</button>
+    <h3>getCoverUrls(blogs)</h3>
+    <p>Extract cover image URLs from a blog metadata array, using either <code>cover</code> or <code>coverImage</code>.</p>
+    <pre><code>const coverUrls = lib.getCoverUrls(blogs);
+console.log(coverUrls);</code></pre>
+    <pre id="output-getCoverUrls" class="section-output">Result will appear here.</pre>
 
     <button id="execGetBlogContent">Run getBlogContent('first blog slug')</button>
     <h3>getBlogContent(slug)</h3>
     <p>Fetch the markdown content for a single blog by slug. The result includes parsed YAML frontmatter metadata and the rendered markdown body.</p>
     <pre><code>const blog = await lib.getBlogContent('getting-started-with-react');
 console.log(blog.metadata, blog.content);</code></pre>
+    <pre id="output-getBlogContent" class="section-output">Result will appear here.</pre>
+
+    <button id="execConvertMarkdownToHtml">Run convertMarkdownToHtml()</button>
+    <h3>convertMarkdownToHtml(markdown)</h3>
+    <p>Convert markdown content into HTML and include default markdown styles in the response.</p>
+    <pre><code>const result = lib.convertMarkdownToHtml(blog.rawTotal);
+console.log(result.styledHtml);</code></pre>
+    <pre id="output-convertMarkdownToHtml" class="section-output">Result will appear here.</pre>
+
+    <button id="execGetVersion">Run getVersion()</button>
+    <h3>getVersion()</h3>
+    <p>Return the current SDK version from the library.</p>
+    <pre><code>const version = lib.getVersion();
+console.log(version);</code></pre>
+    <pre id="output-getVersion" class="section-output">Result will appear here.</pre>
+
+    <button id="execRegisterEvents">Register event listeners</button>
+    <h3>Event System</h3>
+    <p>Subscribe to library lifecycle events to track cache hits, misses, fetch progress, and errors.</p>
+    <pre><code>lib.on('cacheHit', key => console.log('Cache hit:', key));
+lib.on('cacheMiss', key => console.log('Cache miss:', key));
+lib.on('blogsLoaded', blogs => console.log('Blogs loaded:', blogs.length));
+lib.on('error', error => console.error('Error:', error));</code></pre>
+    <pre id="output-registerEvents" class="section-output">Register event listeners then run a fetch to see events.</pre>
 
     <button id="execGetRecommendations">Run getRecommendations()</button>
     <h3>getRecommendations(blogs, options)</h3>
@@ -123,6 +193,7 @@ console.log(blog.metadata, blog.content);</code></pre>
   userPreferences: { react: 3, javascript: 2 }
 });
 console.log(recommendations);</code></pre>
+    <pre id="output-getRecommendations" class="section-output">Result will appear here.</pre>
 
     <button id="execTrackReadBlog">Run trackReadBlog()</button>
     <h3>trackReadBlog(tags, weight)</h3>
@@ -130,17 +201,20 @@ console.log(recommendations);</code></pre>
     <pre><code>lib.trackReadBlog(['react', 'web'], 1);
 const prefs = lib.getUserPreferences();
 console.log(prefs);</code></pre>
+    <pre id="output-trackReadBlog" class="section-output">Result will appear here.</pre>
 
     <button id="execGetUserPreferences">Run getUserPreferences()</button>
     <h3>getUserPreferences()</h3>
     <p>Read the stored user preference profile that is used to personalize recommendations.</p>
     <pre><code>const preferences = lib.getUserPreferences();
 console.log(preferences);</code></pre>
+    <pre id="output-getUserPreferences" class="section-output">Result will appear here.</pre>
 
     <button id="execClearUserPreferences">Run clearUserPreferences()</button>
     <h3>clearUserPreferences()</h3>
     <p>Clear any stored reading preferences from the configured storage mechanism.</p>
     <pre><code>lib.clearUserPreferences();</code></pre>
+    <pre id="output-clearUserPreferences" class="section-output">Result will appear here.</pre>
 
     <button id="execSearchBlogs">Run searchBlogs()</button>
     <h3>searchBlogs(blogs, query, options)</h3>
@@ -149,27 +223,32 @@ console.log(preferences);</code></pre>
   searchFields: ['title', 'description', 'tags']
 });
 console.log(filtered);</code></pre>
+    <pre id="output-searchBlogs" class="section-output">Result will appear here.</pre>
 
     <button id="execFilterByTags">Run filterByTags()</button>
     <h3>filterByTags(blogs, tagFilter, mode)</h3>
     <p>Filter blogs by one or more tags, using either any-match or all-match logic.</p>
     <pre><code>const filteredTags = lib.filterByTags(blogs, ['react', 'javascript'], 'any');
 console.log(filteredTags);</code></pre>
+    <pre id="output-filterByTags" class="section-output">Result will appear here.</pre>
 
     <button id="execGetConfig">Run getConfig()</button>
     <h3>getConfig()</h3>
     <p>Return the current library configuration, excluding decrypted secrets.</p>
     <pre><code>console.log(lib.getConfig());</code></pre>
+    <pre id="output-getConfig" class="section-output">Result will appear here.</pre>
 
     <button id="execSetConfig">Run setConfig({ useCache: false })</button>
     <h3>setConfig(newConfig)</h3>
     <p>Update runtime settings such as cache TTL or storage options without reinitializing the library.</p>
     <pre><code>lib.setConfig({ useCache: false });</code></pre>
+    <pre id="output-setConfig" class="section-output">Result will appear here.</pre>
 
     <button id="execClearCache">Run clearCache('astra_blog_content_')</button>
     <h3>clearCache(pattern)</h3>
     <p>Clear cached blog data from storage. Provide a key pattern to remove specific cache entries.</p>
     <pre><code>lib.clearCache('astra_blog_content_');</code></pre>
+    <pre id="output-clearCache" class="section-output">Result will appear here.</pre>
   </div>
 
   <script src="./astra-blogs-lib.js"></script>
@@ -180,6 +259,13 @@ console.log(filteredTags);</code></pre>
 
     function setOutput(value) {
       document.getElementById('output').textContent = value;
+    }
+
+    function setSectionOutput(id, value) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = value;
+      }
     }
 
     function getTokenSecret() {
@@ -217,9 +303,13 @@ console.log(filteredTags);</code></pre>
         }
 
         result.config = lib.getConfig();
-        setOutput(JSON.stringify(result, null, 2));
+        const output = JSON.stringify(result, null, 2);
+        setSectionOutput('output-fullInit', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-fullInit', message);
+        setOutput(message);
       }
     }
 
@@ -227,9 +317,42 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         const blogs = await lib.getAllBlogs();
-        setOutput(JSON.stringify(blogs, null, 2));
+        const output = JSON.stringify(blogs, null, 2);
+        setSectionOutput('output-getAllBlogs', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-getAllBlogs', message);
+        setOutput(message);
+      }
+    }
+
+    async function execGetAllCovers() {
+      try {
+        const lib = await getDemoLib();
+        const coverUrls = await lib.getAllCovers();
+        const output = JSON.stringify(coverUrls, null, 2);
+        setSectionOutput('output-getAllCovers', output);
+        setOutput(output);
+      } catch (error) {
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-getAllCovers', message);
+        setOutput(message);
+      }
+    }
+
+    async function execGetCoverUrls() {
+      try {
+        const lib = await getDemoLib();
+        const blogs = await lib.getAllBlogs();
+        const coverUrls = lib.getCoverUrls(blogs);
+        const output = JSON.stringify(coverUrls, null, 2);
+        setSectionOutput('output-getCoverUrls', output);
+        setOutput(output);
+      } catch (error) {
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-getCoverUrls', message);
+        setOutput(message);
       }
     }
 
@@ -241,9 +364,66 @@ console.log(filteredTags);</code></pre>
           throw new Error('No blogs found. Run getAllBlogs first.');
         }
         const blog = await lib.getBlogContent(blogs[0].slug);
-        setOutput(JSON.stringify(blog, null, 2));
+        const output = JSON.stringify(blog, null, 2);
+        setSectionOutput('output-getBlogContent', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-getBlogContent', message);
+        setOutput(message);
+      }
+    }
+
+    async function execConvertMarkdownToHtml() {
+      try {
+        const lib = await getDemoLib();
+        const blogs = await lib.getAllBlogs();
+        if (!blogs.length) {
+          throw new Error('No blogs found. Run getAllBlogs first.');
+        }
+        const blog = await lib.getBlogContent(blogs[0].slug);
+        if (!blog) {
+          throw new Error('Blog content not found.');
+        }
+
+        const converted = lib.convertMarkdownToHtml(blog.rawTotal);
+        const output = JSON.stringify(converted, null, 2);
+        setSectionOutput('output-convertMarkdownToHtml', output);
+        setOutput(output);
+      } catch (error) {
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-convertMarkdownToHtml', message);
+        setOutput(message);
+      }
+    }
+
+    async function execGetVersion() {
+      try {
+        const lib = await getDemoLib();
+        const version = lib.getVersion();
+        setSectionOutput('output-getVersion', version);
+        setOutput(version);
+      } catch (error) {
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-getVersion', message);
+        setOutput(message);
+      }
+    }
+
+    async function execRegisterEvents() {
+      try {
+        const lib = await getDemoLib();
+        lib.on('cacheHit', key => setSectionOutput('output-registerEvents', `Cache hit: ${key}`));
+        lib.on('cacheMiss', key => setSectionOutput('output-registerEvents', `Cache miss: ${key}`));
+        lib.on('blogsLoaded', blogs => setSectionOutput('output-registerEvents', `Blogs loaded: ${blogs.length}`));
+        lib.on('error', error => setSectionOutput('output-registerEvents', `Error: ${error.message || error}`));
+        const output = 'Event listeners registered. Run a fetch action to see events.';
+        setSectionOutput('output-registerEvents', output);
+        setOutput(output);
+      } catch (error) {
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-registerEvents', message);
+        setOutput(message);
       }
     }
 
@@ -255,9 +435,13 @@ console.log(filteredTags);</code></pre>
           count: 5,
           userPreferences: { react: 3, javascript: 2 }
         });
-        setOutput(JSON.stringify(recommendations, null, 2));
+        const output = JSON.stringify(recommendations, null, 2);
+        setSectionOutput('output-getRecommendations', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-getRecommendations', message);
+        setOutput(message);
       }
     }
 
@@ -266,9 +450,13 @@ console.log(filteredTags);</code></pre>
         const lib = await getDemoLib();
         lib.trackReadBlog(['react', 'web'], 1);
         const prefs = lib.getUserPreferences();
-        setOutput(JSON.stringify(prefs, null, 2));
+        const output = JSON.stringify(prefs, null, 2);
+        setSectionOutput('output-trackReadBlog', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-trackReadBlog', message);
+        setOutput(message);
       }
     }
 
@@ -276,9 +464,13 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         const preferences = lib.getUserPreferences();
-        setOutput(JSON.stringify(preferences, null, 2));
+        const output = JSON.stringify(preferences, null, 2);
+        setSectionOutput('output-getUserPreferences', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-getUserPreferences', message);
+        setOutput(message);
       }
     }
 
@@ -286,9 +478,13 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         lib.clearUserPreferences();
-        setOutput('User preferences cleared.');
+        const output = 'User preferences cleared.';
+        setSectionOutput('output-clearUserPreferences', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-clearUserPreferences', message);
+        setOutput(message);
       }
     }
 
@@ -299,9 +495,13 @@ console.log(filteredTags);</code></pre>
         const filtered = lib.searchBlogs(blogs, 'react', {
           searchFields: ['title', 'description', 'tags']
         });
-        setOutput(JSON.stringify(filtered, null, 2));
+        const output = JSON.stringify(filtered, null, 2);
+        setSectionOutput('output-searchBlogs', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-searchBlogs', message);
+        setOutput(message);
       }
     }
 
@@ -310,9 +510,13 @@ console.log(filteredTags);</code></pre>
         const lib = await getDemoLib();
         const blogs = await lib.getAllBlogs();
         const filteredTags = lib.filterByTags(blogs, ['react', 'javascript'], 'any');
-        setOutput(JSON.stringify(filteredTags, null, 2));
+        const output = JSON.stringify(filteredTags, null, 2);
+        setSectionOutput('output-filterByTags', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-filterByTags', message);
+        setOutput(message);
       }
     }
 
@@ -320,9 +524,13 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         const config = lib.getConfig();
-        setOutput(JSON.stringify(config, null, 2));
+        const output = JSON.stringify(config, null, 2);
+        setSectionOutput('output-getConfig', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-getConfig', message);
+        setOutput(message);
       }
     }
 
@@ -330,9 +538,13 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         lib.setConfig({ useCache: false });
-        setOutput(JSON.stringify(lib.getConfig(), null, 2));
+        const output = JSON.stringify(lib.getConfig(), null, 2);
+        setSectionOutput('output-setConfig', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-setConfig', message);
+        setOutput(message);
       }
     }
 
@@ -340,9 +552,29 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         lib.clearCache('astra_blog_content_');
-        setOutput('Cache cleared for pattern: astra_blog_content_');
+        const output = 'Cache cleared for pattern: astra_blog_content_';
+        setSectionOutput('output-clearCache', output);
+        setOutput(output);
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-clearCache', message);
+        setOutput(message);
+      }
+    }
+
+    async function runCustomCode() {
+      try {
+        const lib = await getDemoLib();
+        const code = document.getElementById('customCode').value;
+        const func = new Function('lib', 'getDemoLib', 'setOutput', 'setSectionOutput', `"use strict"; return (async () => { ${code} })();`);
+        const result = await func(lib, getDemoLib, setOutput, setSectionOutput);
+        const output = typeof result === 'undefined' ? 'Execution completed.' : JSON.stringify(result, null, 2);
+        setSectionOutput('output-customCode', output);
+        setOutput(output);
+      } catch (error) {
+        const message = `Error: ${error.message}`;
+        setSectionOutput('output-customCode', message);
+        setOutput(message);
       }
     }
 
@@ -380,7 +612,12 @@ console.log(filteredTags);</code></pre>
     document.getElementById('fetchInvalid').addEventListener('click', fetchWithInvalidConfig);
     document.getElementById('execFullInit').addEventListener('click', execFullInit);
     document.getElementById('execGetAllBlogs').addEventListener('click', execGetAllBlogs);
+    document.getElementById('execGetAllCovers').addEventListener('click', execGetAllCovers);
+    document.getElementById('execGetCoverUrls').addEventListener('click', execGetCoverUrls);
     document.getElementById('execGetBlogContent').addEventListener('click', execGetBlogContent);
+    document.getElementById('execConvertMarkdownToHtml').addEventListener('click', execConvertMarkdownToHtml);
+    document.getElementById('execGetVersion').addEventListener('click', execGetVersion);
+    document.getElementById('execRegisterEvents').addEventListener('click', execRegisterEvents);
     document.getElementById('execGetRecommendations').addEventListener('click', execGetRecommendations);
     document.getElementById('execTrackReadBlog').addEventListener('click', execTrackReadBlog);
     document.getElementById('execGetUserPreferences').addEventListener('click', execGetUserPreferences);
@@ -390,6 +627,7 @@ console.log(filteredTags);</code></pre>
     document.getElementById('execGetConfig').addEventListener('click', execGetConfig);
     document.getElementById('execSetConfig').addEventListener('click', execSetConfig);
     document.getElementById('execClearCache').addEventListener('click', execClearCache);
+    document.getElementById('runCustomCode').addEventListener('click', runCustomCode);
   </script>
 </body>
 </html>

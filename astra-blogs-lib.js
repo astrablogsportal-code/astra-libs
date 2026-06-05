@@ -13,6 +13,8 @@
  */
 
 class AstraBlogsLib {
+  static VERSION = '3.1.0';
+
   /**
    * Initialize the Astra Blogs Library
    * @param {Object} config - Configuration object
@@ -34,6 +36,7 @@ class AstraBlogsLib {
       storage: config.storage || (typeof window !== 'undefined' ? window.localStorage : null),
       useCache: config.useCache !== false // Enable cache by default
     };
+    this.events = {};
 
     this.baseURL = 'https://api.github.com';
     this._decryptionPromise = null;
@@ -61,6 +64,69 @@ class AstraBlogsLib {
     }
 
     return headers;
+  }
+
+  /**
+   * Get the current library version.
+   * @returns {string} Library version string
+   */
+  getVersion() {
+    return AstraBlogsLib.VERSION;
+  }
+
+  /**
+   * Subscribe to named events emitted by the library.
+   * @param {string} event - Event name
+   * @param {Function} callback - Callback to invoke when the event fires
+   */
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  }
+
+  /**
+   * Unsubscribe from named events.
+   * @param {string} event - Event name
+   * @param {Function} [callback] - Specific callback to remove, or remove all if omitted
+   */
+  off(event, callback) {
+    if (!this.events[event]) return;
+    if (!callback) {
+      delete this.events[event];
+      return;
+    }
+    this.events[event] = this.events[event].filter(cb => cb !== callback);
+  }
+
+  /**
+   * Subscribe to an event once.
+   * @param {string} event - Event name
+   * @param {Function} callback - Callback to invoke once
+   */
+  once(event, callback) {
+    const wrapper = data => {
+      this.off(event, wrapper);
+      callback(data);
+    };
+    this.on(event, wrapper);
+  }
+
+  /**
+   * Emit a named event with optional data.
+   * @param {string} event - Event name
+   * @param {any} [data] - Payload for listeners
+   */
+  emit(event, data) {
+    if (!this.events[event]) return;
+    this.events[event].forEach(cb => {
+      try {
+        cb(data);
+      } catch (error) {
+        console.error(`Error in event listener for ${event}:`, error);
+      }
+    });
   }
 
   async _applyDecryptedConfig() {
@@ -236,12 +302,16 @@ class AstraBlogsLib {
       const cached = this._getFromStorage(cacheKey, this.config.indexCacheTTL);
       if (cached) {
         console.log('📚 Returning blogs from cache');
+        this.emit('cacheHit', cacheKey);
+        this.emit('blogsLoaded', cached);
         return cached;
       }
+      this.emit('cacheMiss', cacheKey);
     }
 
     try {
       const url = `${this.baseURL}/repos/${this.config.owner}/${this.config.repo}/contents/index.json`;
+      this.emit('fetchStarted', { key: cacheKey, url });
       const response = await fetch(url, {
         headers: this._getHeaders()
       });
@@ -265,10 +335,12 @@ class AstraBlogsLib {
       // Cache the result
       this._saveToStorage(cacheKey, data);
       console.log(`📚 Fetched ${data.length} blogs from repository`);
+      this.emit('blogsLoaded', data);
 
       return data;
     } catch (error) {
       console.error('❌ Failed to fetch blog list:', error);
+      this.emit('error', error);
 
       // Fallback to expired cache if available
       const expired = this._getFromStorage(cacheKey);
@@ -279,6 +351,36 @@ class AstraBlogsLib {
 
       return [];
     }
+  }
+
+  /**
+   * Fetch all cover image URLs from the blog index
+   * @param {Object} [options={}] - Fetch options
+   * @param {boolean} [options.useCache=true] - Use cached data if available
+   * @param {boolean} [options.forceFresh=false] - Skip cache and fetch fresh data
+   * @returns {Promise<Array<string>>} Array of unique cover image URLs
+   */
+  async getAllCovers(options = {}) {
+    const blogs = await this.getAllBlogs(options);
+    return this.getCoverUrls(blogs);
+  }
+
+  /**
+   * Extract cover image URLs from an array of blog metadata
+   * @param {Array} blogs - Array of blog metadata objects
+   * @returns {Array<string>} Array of unique cover image URLs
+   */
+  getCoverUrls(blogs) {
+    if (!Array.isArray(blogs)) {
+      return [];
+    }
+
+    const urls = blogs
+      .map(blog => blog.cover || blog.coverImage)
+      .filter(url => typeof url === 'string' && url.trim().length > 0)
+      .map(url => url.trim());
+
+    return Array.from(new Set(urls));
   }
 
   /**
@@ -321,12 +423,16 @@ class AstraBlogsLib {
       const cached = this._getFromStorage(cacheKey, this.config.contentCacheTTL);
       if (cached) {
         console.log(`📄 Returning blog "${slug}" from cache`);
+        this.emit('cacheHit', cacheKey);
+        this.emit('blogLoaded', { slug, content: cached });
         return cached;
       }
+      this.emit('cacheMiss', cacheKey);
     }
 
     try {
       const url = `${this.baseURL}/repos/${this.config.owner}/${this.config.repo}/contents/blogs/${slug}.md`;
+      this.emit('fetchStarted', { slug, key: cacheKey, url });
       const response = await fetch(url, {
         headers: this._getHeaders()
       });
@@ -345,10 +451,12 @@ class AstraBlogsLib {
       // Cache the result
       this._saveToStorage(cacheKey, blogData);
       console.log(`📄 Fetched blog content: ${slug}`);
+      this.emit('blogLoaded', { slug, content: blogData });
 
       return blogData;
     } catch (error) {
       console.error(`❌ Failed to fetch blog ${slug}:`, error);
+      this.emit('error', error);
 
       // Fallback to expired cache if available
       const expired = this._getFromStorage(cacheKey);
@@ -359,6 +467,168 @@ class AstraBlogsLib {
 
       return null;
     }
+  }
+
+  /**
+   * Convert markdown content to HTML and optionally include default styling.
+   * @param {string} markdownContent - Raw markdown content
+   * @param {Object} [options={}] - Conversion options
+   * @param {boolean} [options.includeStyles=true] - Include default markdown styles in the returned HTML
+   * @returns {Object} HTML conversion result
+   * @returns {string} return.html - Rendered HTML string
+   * @returns {string} return.styledHtml - Rendered HTML wrapped with default styles
+   */
+  convertMarkdownToHtml(markdownContent, options = {}) {
+    if (typeof markdownContent !== 'string') {
+      return {
+        html: '',
+        styledHtml: ''
+      };
+    }
+
+    const { includeStyles = true } = options;
+    const html = this._markdownToHtml(markdownContent);
+    const styledHtml = includeStyles
+      ? `<style>${this._getMarkdownStyles()}</style>\n${html}`
+      : html;
+
+    return { html, styledHtml };
+  }
+
+  /**
+   * Convert markdown to HTML using a lightweight renderer.
+   * @private
+   * @param {string} markdownContent - Raw markdown content
+   * @returns {string} Rendered HTML
+   */
+  _markdownToHtml(markdownContent) {
+    const escapeHtml = text => text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const renderInline = text => {
+      let result = escapeHtml(text);
+
+      result = result.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+      result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+      result = result.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+      result = result.replace(/___(.+?)___/g, '<strong><em>$1</em></strong>');
+      result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      result = result.replace(/__(.+?)__/g, '<strong>$1</strong>');
+      result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
+      result = result.replace(/_(.+?)_/g, '<em>$1</em>');
+      result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+      return result;
+    };
+
+    const lines = markdownContent.replace(/\r\n/g, '\n').split('\n');
+    const htmlLines = [];
+    let listType = null;
+    let inCodeBlock = false;
+    let codeBlockLanguage = '';
+
+    const closeList = () => {
+      if (listType) {
+        htmlLines.push(`</${listType}>`);
+        listType = null;
+      }
+    };
+
+    for (let line of lines) {
+      if (line.startsWith('```')) {
+        if (!inCodeBlock) {
+          inCodeBlock = true;
+          codeBlockLanguage = line.slice(3).trim();
+          htmlLines.push(`<pre><code class="language-${escapeHtml(codeBlockLanguage)}">`);
+        } else {
+          inCodeBlock = false;
+          htmlLines.push('</code></pre>');
+        }
+        continue;
+      }
+
+      if (inCodeBlock) {
+        htmlLines.push(escapeHtml(line));
+        continue;
+      }
+
+      if (!line.trim()) {
+        closeList();
+        continue;
+      }
+
+      const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+      if (headingMatch) {
+        closeList();
+        const level = headingMatch[1].length;
+        htmlLines.push(`<h${level}>${renderInline(headingMatch[2])}</h${level}>`);
+        continue;
+      }
+
+      const blockquoteMatch = line.match(/^>\s?(.*)$/);
+      if (blockquoteMatch) {
+        closeList();
+        htmlLines.push(`<blockquote>${renderInline(blockquoteMatch[1])}</blockquote>`);
+        continue;
+      }
+
+      const unorderedMatch = line.match(/^\s*[-*+]\s+(.*)$/);
+      if (unorderedMatch) {
+        const item = renderInline(unorderedMatch[1]);
+        if (listType !== 'ul') {
+          closeList();
+          listType = 'ul';
+          htmlLines.push('<ul>');
+        }
+        htmlLines.push(`<li>${item}</li>`);
+        continue;
+      }
+
+      const orderedMatch = line.match(/^\s*\d+\.\s+(.*)$/);
+      if (orderedMatch) {
+        const item = renderInline(orderedMatch[1]);
+        if (listType !== 'ol') {
+          closeList();
+          listType = 'ol';
+          htmlLines.push('<ol>');
+        }
+        htmlLines.push(`<li>${item}</li>`);
+        continue;
+      }
+
+      closeList();
+      htmlLines.push(`<p>${renderInline(line)}</p>`);
+    }
+
+    closeList();
+    return htmlLines.join('\n');
+  }
+
+  /**
+   * Return default markdown CSS styles for styled HTML output.
+   * @private
+   * @returns {string} CSS rules
+   */
+  _getMarkdownStyles() {
+    return `
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.7; color: #111; }
+      h1, h2, h3, h4, h5, h6 { font-weight: 600; margin: 1.25em 0 0.75em; }
+      p { margin: 0.85em 0; }
+      a { color: #0366d6; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      strong { font-weight: 700; }
+      em { font-style: italic; }
+      code { font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; background: #f6f8fa; color: #e83e8c; padding: 0.2em 0.35em; border-radius: 6px; }
+      pre { background: #0d1117; color: #c9d1d9; padding: 1em; border-radius: 12px; overflow-x: auto; }
+      pre code { background: transparent; color: inherit; padding: 0; }
+      blockquote { border-left: 4px solid #dfe2e5; color: #6a737d; margin: 0; padding: 0.5em 1em; background: #f6f8fa; }
+      ul, ol { margin: 0.85em 0 0.85em 1.4em; }
+      img { max-width: 100%; height: auto; }
+    `.trim();
   }
 
   /**

@@ -24,6 +24,7 @@ class AstraBlogsLib {
    * @param {number} [config.contentCacheTTL=86400000] - Cache TTL for blog content in milliseconds (default: 24 hours)
    * @param {Object} [config.storage=localStorage] - Storage mechanism (must have getItem/setItem/removeItem)
    * @param {boolean} [config.useCache=true] - Whether to use local storage caching
+   * @param {boolean} [config.includeScheduled=false] - Whether to include scheduled posts (future-dated blogs)
    * @throws {Error} When direct owner/repo/branch/githubToken config is supplied
    */
   constructor(config = {}) {
@@ -35,7 +36,8 @@ class AstraBlogsLib {
       indexCacheTTL: config.indexCacheTTL || 3600000, // 1 hour
       contentCacheTTL: config.contentCacheTTL || 86400000, // 24 hours
       storage: config.storage || (typeof window !== 'undefined' ? window.localStorage : null),
-      useCache: config.useCache !== false // Enable cache by default
+      useCache: config.useCache !== false, // Enable cache by default
+      includeScheduled: config.includeScheduled === true // Filter out scheduled posts by default
     };
     this.events = {};
 
@@ -296,7 +298,14 @@ class AstraBlogsLib {
     }
 
     const { useCache = true, forceFresh = false } = options;
+    const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
     const cacheKey = 'astra_blogs_index_cache';
+
+    // Helper to filter out scheduled blogs
+    const filterBlogs = (list) => {
+      if (includeScheduled) return list;
+      return list.filter(blog => !blog.date || new Date(blog.date) <= new Date());
+    };
 
     // Try cache first (unless forceFresh is set)
     if (useCache && !forceFresh) {
@@ -304,8 +313,9 @@ class AstraBlogsLib {
       if (cached) {
         console.log('📚 Returning blogs from cache');
         this.emit('cacheHit', cacheKey);
-        this.emit('blogsLoaded', cached);
-        return cached;
+        const filteredCached = filterBlogs(cached);
+        this.emit('blogsLoaded', filteredCached);
+        return filteredCached;
       }
       this.emit('cacheMiss', cacheKey);
     }
@@ -333,12 +343,13 @@ class AstraBlogsLib {
         return [];
       }
 
-      // Cache the result
+      // Cache the result (full unfiltered array)
       this._saveToStorage(cacheKey, data);
-      console.log(`📚 Fetched ${data.length} blogs from repository`);
-      this.emit('blogsLoaded', data);
+      const filteredData = filterBlogs(data);
+      console.log(`📚 Fetched ${filteredData.length} blogs from repository`);
+      this.emit('blogsLoaded', filteredData);
 
-      return data;
+      return filteredData;
     } catch (error) {
       console.error('❌ Failed to fetch blog list:', error);
       this.emit('error', error);
@@ -347,7 +358,8 @@ class AstraBlogsLib {
       const expired = this._getFromStorage(cacheKey);
       if (expired) {
         console.log('⚠️ Returning expired cached blogs due to fetch error');
-        return expired;
+        const filteredExpired = filterBlogs(expired);
+        return filteredExpired;
       }
 
       return [];
@@ -417,12 +429,32 @@ class AstraBlogsLib {
     }
 
     const { useCache = true, forceFresh = false, parseYAML = true } = options;
+    const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
     const cacheKey = `astra_blog_content_${slug}`;
+
+    const isBlogScheduled = (blog, rawContent = null) => {
+      if (!blog) return false;
+      let dateVal = blog.metadata ? (blog.metadata.date || blog.metadata.Date) : null;
+      if (!dateVal && rawContent) {
+        try {
+          const match = rawContent.match(/^---\n([\s\S]*?)\n---\n/);
+          if (match) {
+            const parsed = this._parseYAML(match[1]);
+            dateVal = parsed.date || parsed.Date;
+          }
+        } catch (e) {}
+      }
+      return dateVal && new Date(dateVal) > new Date();
+    };
 
     // Try cache first (unless forceFresh is set)
     if (useCache && !forceFresh) {
       const cached = this._getFromStorage(cacheKey, this.config.contentCacheTTL);
       if (cached) {
+        if (!includeScheduled && isBlogScheduled(cached)) {
+          console.warn(`❌ Access to scheduled blog denied (cache): ${slug}`);
+          return null;
+        }
         console.log(`📄 Returning blog "${slug}" from cache`);
         this.emit('cacheHit', cacheKey);
         this.emit('blogLoaded', { slug, content: cached });
@@ -449,6 +481,12 @@ class AstraBlogsLib {
       const markdownContent = await response.text();
       const blogData = this._parseMarkdown(markdownContent, parseYAML);
 
+      // Check if scheduled
+      if (!includeScheduled && isBlogScheduled(blogData, markdownContent)) {
+        console.warn(`❌ Access to scheduled blog denied: ${slug}`);
+        return null;
+      }
+
       // Cache the result
       this._saveToStorage(cacheKey, blogData);
       console.log(`📄 Fetched blog content: ${slug}`);
@@ -462,6 +500,10 @@ class AstraBlogsLib {
       // Fallback to expired cache if available
       const expired = this._getFromStorage(cacheKey);
       if (expired) {
+        if (!includeScheduled && isBlogScheduled(expired)) {
+          console.warn(`❌ Access to scheduled blog denied (expired cache fallback): ${slug}`);
+          return null;
+        }
         console.log(`⚠️ Returning expired cached blog "${slug}" due to fetch error`);
         return expired;
       }
@@ -739,6 +781,11 @@ class AstraBlogsLib {
       return [];
     }
 
+    const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
+    const blogsToRecommend = includeScheduled
+      ? blogs
+      : blogs.filter(blog => !blog.date || new Date(blog.date) <= new Date());
+
     // Use provided preferences or load from storage
     let preferences = userPreferences;
     if (!preferences && this.config.storage) {
@@ -756,7 +803,7 @@ class AstraBlogsLib {
     }
 
     // Score blogs based on tag overlap
-    const scoredBlogs = blogs.map(blog => {
+    const scoredBlogs = blogsToRecommend.map(blog => {
       let score = 0;
 
       if (blog.tags && Array.isArray(blog.tags)) {
@@ -872,13 +919,22 @@ class AstraBlogsLib {
   searchBlogs(blogs, query, options = {}) {
     const { searchFields = ['title', 'description', 'tags'] } = options;
 
-    if (!query.trim() || !Array.isArray(blogs)) {
-      return blogs;
+    if (!Array.isArray(blogs)) {
+      return [];
+    }
+
+    const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
+    const blogsToSearch = includeScheduled
+      ? blogs
+      : blogs.filter(blog => !blog.date || new Date(blog.date) <= new Date());
+
+    if (!query.trim()) {
+      return blogsToSearch;
     }
 
     const lowerQuery = query.toLowerCase();
 
-    return blogs.filter(blog => {
+    return blogsToSearch.filter(blog => {
       for (const field of searchFields) {
         if (!(field in blog)) continue;
 
@@ -907,17 +963,25 @@ class AstraBlogsLib {
    * @param {Array} blogs - Array of blog objects
    * @param {Array|string} tagFilter - Tag or array of tags to filter by
    * @param {string} [mode='any'] - 'any' (OR) or 'all' (AND) matching
+   * @param {Object} [options={}] - Filter options
+   * @param {boolean} [options.includeScheduled] - Whether to include scheduled posts
    * @returns {Array} Filtered blogs
    */
-  filterByTags(blogs, tagFilter, mode = 'any') {
+  filterByTags(blogs, tagFilter, mode = 'any', options = {}) {
     if (!Array.isArray(blogs)) return [];
-    if (!tagFilter) return blogs;
+
+    const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
+    const blogsToFilter = includeScheduled
+      ? blogs
+      : blogs.filter(blog => !blog.date || new Date(blog.date) <= new Date());
+
+    if (!tagFilter) return blogsToFilter;
 
     const tags = Array.isArray(tagFilter)
       ? tagFilter.map(t => String(t).toLowerCase().trim())
       : [String(tagFilter).toLowerCase().trim()];
 
-    return blogs.filter(blog => {
+    return blogsToFilter.filter(blog => {
       if (!blog.tags || !Array.isArray(blog.tags)) return false;
 
       const blogTags = blog.tags.map(t => String(t).toLowerCase().trim());

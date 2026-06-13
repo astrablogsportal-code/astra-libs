@@ -46,6 +46,12 @@ export interface AstraBlogsConfig {
    * @default true
    */
   useCache?: boolean;
+
+  /**
+   * Include scheduled posts (future-dated blogs)
+   * @default false
+   */
+  includeScheduled?: boolean;
 }
 
 /**
@@ -60,6 +66,7 @@ export interface AstraBlogsRuntimeConfig {
   contentCacheTTL: number;
   storage: Storage | null;
   useCache: boolean;
+  includeScheduled: boolean;
 }
 
 /**
@@ -83,6 +90,12 @@ export interface FetchOptions {
    * @default true
    */
   parseYAML?: boolean;
+
+  /**
+   * Include scheduled posts (future-dated blogs)
+   * @default false
+   */
+  includeScheduled?: boolean;
 }
 
 /**
@@ -212,6 +225,12 @@ export interface RecommendationOptions {
    * @default true
    */
   randomizeTies?: boolean;
+
+  /**
+   * Include scheduled posts (future-dated blogs)
+   * @default false
+   */
+  includeScheduled?: boolean;
 }
 
 /**
@@ -223,6 +242,12 @@ export interface SearchOptions {
    * @default ['title', 'description', 'tags']
    */
   searchFields?: string[];
+
+  /**
+   * Include scheduled posts (future-dated blogs)
+   * @default false
+   */
+  includeScheduled?: boolean;
 }
 
 /**
@@ -378,6 +403,7 @@ declare class AstraBlogsLib {
    * @param blogs - Array of blogs to filter
    * @param tagFilter - Single tag string or array of tags
    * @param mode - Filter mode: 'any' (OR) or 'all' (AND)
+   * @param options - Optional filter options
    * @returns Array of blogs matching the filter
    * 
    * @example
@@ -390,7 +416,8 @@ declare class AstraBlogsLib {
   filterByTags(
     blogs: BlogMetadata[],
     tagFilter: string | string[],
-    mode?: FilterMode
+    mode?: FilterMode,
+    options?: { includeScheduled?: boolean }
   ): BlogMetadata[];
 
   /**

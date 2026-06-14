@@ -37,7 +37,9 @@ class AstraBlogsLib {
       contentCacheTTL: config.contentCacheTTL || 86400000, // 24 hours
       storage: config.storage || (typeof window !== 'undefined' ? window.localStorage : null),
       useCache: config.useCache !== false, // Enable cache by default
-      includeScheduled: config.includeScheduled === true // Filter out scheduled posts by default
+      includeScheduled: config.includeScheduled === true, // Filter out scheduled posts by default
+      allowedStatuses: config.allowedStatuses || ['published'],
+      includeDrafts: config.includeDrafts === true
     };
     this.events = {};
 
@@ -146,6 +148,27 @@ class AstraBlogsLib {
 
   _getMissingConfigKeys() {
     return ['owner', 'repo', 'branch'].filter(key => !this.config[key]);
+  }
+
+  /**
+   * Get allowed publication statuses based on runtime options and config
+   * @private
+   * @param {Object} [options={}] - Method options
+   * @returns {Array<string>} Array of allowed statuses in lowercase
+   */
+  _getAllowedStatuses(options = {}) {
+    let statuses = options.allowedStatuses || this.config.allowedStatuses || ['published'];
+    if (!Array.isArray(statuses)) {
+      statuses = [statuses];
+    }
+    statuses = statuses.map(s => String(s).toLowerCase());
+
+    const includeDrafts = options.includeDrafts !== undefined ? options.includeDrafts : this.config.includeDrafts;
+    if (includeDrafts && !statuses.includes('draft')) {
+      statuses.push('draft');
+    }
+
+    return statuses;
   }
 
   async _decryptConfig(token, secret) {
@@ -301,10 +324,17 @@ class AstraBlogsLib {
     const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
     const cacheKey = 'astra_blogs_index_cache';
 
-    // Helper to filter out scheduled blogs
+    // Helper to filter out scheduled blogs and non-allowed status blogs
+    const allowedStatuses = this._getAllowedStatuses(options);
     const filterBlogs = (list) => {
-      if (includeScheduled) return list;
-      return list.filter(blog => !blog.date || new Date(blog.date) <= new Date());
+      let filtered = list;
+      if (!includeScheduled) {
+        filtered = filtered.filter(blog => !blog.date || new Date(blog.date) <= new Date());
+      }
+      return filtered.filter(blog => {
+        const blogStatus = (blog.status || 'published').toLowerCase();
+        return allowedStatuses.includes(blogStatus);
+      });
     };
 
     // Try cache first (unless forceFresh is set)
@@ -432,6 +462,8 @@ class AstraBlogsLib {
     const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
     const cacheKey = `astra_blog_content_${slug}`;
 
+    const allowedStatuses = this._getAllowedStatuses(options);
+
     const isBlogScheduled = (blog, rawContent = null) => {
       if (!blog) return false;
       let dateVal = blog.metadata ? (blog.metadata.date || blog.metadata.Date) : null;
@@ -447,12 +479,32 @@ class AstraBlogsLib {
       return dateVal && new Date(dateVal) > new Date();
     };
 
+    const isBlogStatusAllowed = (blog, rawContent = null) => {
+      if (!blog) return false;
+      let statusVal = blog.metadata ? (blog.metadata.status || blog.metadata.Status) : null;
+      if (!statusVal && rawContent) {
+        try {
+          const match = rawContent.match(/^---\n([\s\S]*?)\n---\n/);
+          if (match) {
+            const parsed = this._parseYAML(match[1]);
+            statusVal = parsed.status || parsed.Status;
+          }
+        } catch (e) {}
+      }
+      const status = (statusVal || 'published').toLowerCase();
+      return allowedStatuses.includes(status);
+    };
+
     // Try cache first (unless forceFresh is set)
     if (useCache && !forceFresh) {
       const cached = this._getFromStorage(cacheKey, this.config.contentCacheTTL);
       if (cached) {
         if (!includeScheduled && isBlogScheduled(cached)) {
           console.warn(`❌ Access to scheduled blog denied (cache): ${slug}`);
+          return null;
+        }
+        if (!isBlogStatusAllowed(cached)) {
+          console.warn(`❌ Access to blog with status denied (cache): ${slug}`);
           return null;
         }
         console.log(`📄 Returning blog "${slug}" from cache`);
@@ -487,6 +539,12 @@ class AstraBlogsLib {
         return null;
       }
 
+      // Check if status is allowed
+      if (!isBlogStatusAllowed(blogData, markdownContent)) {
+        console.warn(`❌ Access to blog with status denied: ${slug}`);
+        return null;
+      }
+
       // Cache the result
       this._saveToStorage(cacheKey, blogData);
       console.log(`📄 Fetched blog content: ${slug}`);
@@ -502,6 +560,10 @@ class AstraBlogsLib {
       if (expired) {
         if (!includeScheduled && isBlogScheduled(expired)) {
           console.warn(`❌ Access to scheduled blog denied (expired cache fallback): ${slug}`);
+          return null;
+        }
+        if (!isBlogStatusAllowed(expired)) {
+          console.warn(`❌ Access to blog with status denied (expired cache fallback): ${slug}`);
           return null;
         }
         console.log(`⚠️ Returning expired cached blog "${slug}" due to fetch error`);
@@ -782,9 +844,14 @@ class AstraBlogsLib {
     }
 
     const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
-    const blogsToRecommend = includeScheduled
+    const allowedStatuses = this._getAllowedStatuses(options);
+    const blogsToRecommend = (includeScheduled
       ? blogs
-      : blogs.filter(blog => !blog.date || new Date(blog.date) <= new Date());
+      : blogs.filter(blog => !blog.date || new Date(blog.date) <= new Date())
+    ).filter(blog => {
+      const blogStatus = (blog.status || 'published').toLowerCase();
+      return allowedStatuses.includes(blogStatus);
+    });
 
     // Use provided preferences or load from storage
     let preferences = userPreferences;
@@ -924,9 +991,14 @@ class AstraBlogsLib {
     }
 
     const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
-    const blogsToSearch = includeScheduled
+    const allowedStatuses = this._getAllowedStatuses(options);
+    const blogsToSearch = (includeScheduled
       ? blogs
-      : blogs.filter(blog => !blog.date || new Date(blog.date) <= new Date());
+      : blogs.filter(blog => !blog.date || new Date(blog.date) <= new Date())
+    ).filter(blog => {
+      const blogStatus = (blog.status || 'published').toLowerCase();
+      return allowedStatuses.includes(blogStatus);
+    });
 
     if (!query.trim()) {
       return blogsToSearch;
@@ -971,9 +1043,14 @@ class AstraBlogsLib {
     if (!Array.isArray(blogs)) return [];
 
     const includeScheduled = options.includeScheduled !== undefined ? options.includeScheduled : this.config.includeScheduled;
-    const blogsToFilter = includeScheduled
+    const allowedStatuses = this._getAllowedStatuses(options);
+    const blogsToFilter = (includeScheduled
       ? blogs
-      : blogs.filter(blog => !blog.date || new Date(blog.date) <= new Date());
+      : blogs.filter(blog => !blog.date || new Date(blog.date) <= new Date())
+    ).filter(blog => {
+      const blogStatus = (blog.status || 'published').toLowerCase();
+      return allowedStatuses.includes(blogStatus);
+    });
 
     if (!tagFilter) return blogsToFilter;
 

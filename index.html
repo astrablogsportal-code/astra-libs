@@ -102,7 +102,9 @@ return blogs;</textarea>
   indexCacheTTL: 600000,      // 10 minutes
   contentCacheTTL: 86400000,  // 24 hours
   useCache: true,
-  storage: window.localStorage
+  storage: window.localStorage,
+  allowedStatuses: ['published', 'in-review', 'draft'], // Custom statuses
+  includeDrafts: false       // Set true to also include 'draft' posts
 });</code></pre>
 
     <button id="execFullInit">Run full init example</button>
@@ -136,8 +138,12 @@ runDemo(token, secret).catch(console.error);</code></pre>
 
     <button id="execGetAllBlogs">Run getAllBlogs()</button>
     <h3>getAllBlogs()</h3>
-    <p>Fetch the full index of published blog metadata from the configured repository. This returns an array of blog objects with title, slug, tags, and other metadata.</p>
-    <pre><code>const blogs = await lib.getAllBlogs();
+    <p>Fetch the full index of published blog metadata from the configured repository. This returns an array of blog objects with title, slug, tags, and other metadata. You can pass options like <code>allowedStatuses</code> and <code>includeDrafts</code> to dynamically filter by status.</p>
+    <pre><code>// Fetch only published and in-review blogs
+const blogs = await lib.getAllBlogs({ allowedStatuses: ['published', 'in-review'] });
+
+// Or easily include drafts
+const allBlogs = await lib.getAllBlogs({ includeDrafts: true });
 console.log(blogs);</code></pre>
     <pre id="output-getAllBlogs" class="section-output">Result will appear here.</pre>
 

@@ -52,6 +52,18 @@ export interface AstraBlogsConfig {
    * @default false
    */
   includeScheduled?: boolean;
+
+  /**
+   * Allowed publication statuses
+   * @default ['published']
+   */
+  allowedStatuses?: string[];
+
+  /**
+   * Include draft posts (convenience for adding 'draft' to allowedStatuses)
+   * @default false
+   */
+  includeDrafts?: boolean;
 }
 
 /**
@@ -67,6 +79,8 @@ export interface AstraBlogsRuntimeConfig {
   storage: Storage | null;
   useCache: boolean;
   includeScheduled: boolean;
+  allowedStatuses: string[];
+  includeDrafts: boolean;
 }
 
 /**
@@ -96,6 +110,18 @@ export interface FetchOptions {
    * @default false
    */
   includeScheduled?: boolean;
+
+  /**
+   * Allowed publication statuses
+   * @default ['published']
+   */
+  allowedStatuses?: string[];
+
+  /**
+   * Include draft posts
+   * @default false
+   */
+  includeDrafts?: boolean;
 }
 
 /**
@@ -171,6 +197,11 @@ export interface BlogMetadata {
   canonical?: string;
 
   /**
+   * Publication status (e.g. 'published', 'draft', 'scheduled')
+   */
+  status?: string;
+
+  /**
    * Additional metadata (custom fields)
    */
   [key: string]: any;
@@ -231,6 +262,16 @@ export interface RecommendationOptions {
    * @default false
    */
   includeScheduled?: boolean;
+
+  /**
+   * Allowed publication statuses
+   */
+  allowedStatuses?: string[];
+
+  /**
+   * Include draft posts
+   */
+  includeDrafts?: boolean;
 }
 
 /**
@@ -248,6 +289,16 @@ export interface SearchOptions {
    * @default false
    */
   includeScheduled?: boolean;
+
+  /**
+   * Allowed publication statuses
+   */
+  allowedStatuses?: string[];
+
+  /**
+   * Include draft posts
+   */
+  includeDrafts?: boolean;
 }
 
 /**
@@ -417,7 +468,11 @@ declare class AstraBlogsLib {
     blogs: BlogMetadata[],
     tagFilter: string | string[],
     mode?: FilterMode,
-    options?: { includeScheduled?: boolean }
+    options?: {
+      includeScheduled?: boolean;
+      allowedStatuses?: string[];
+      includeDrafts?: boolean;
+    }
   ): BlogMetadata[];
 
   /**

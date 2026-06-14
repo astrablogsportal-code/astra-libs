@@ -18,7 +18,16 @@ A standalone JavaScript library for fetching, caching, searching, and rendering 
 
 ## Installation
 
-### Browser via direct script
+### Browser via CDN
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/astra-blogs-lib@latest/astra-blogs-lib.min.js"></script>
+<script>
+  const blogsLib = new AstraBlogsLib();
+</script>
+```
+
+### Browser via local script
 
 ```html
 <script src="./astra-blogs-lib.js"></script>
@@ -129,6 +138,9 @@ Creates a library instance.
 - `contentCacheTTL` - cache time for blog content in milliseconds
 - `storage` - storage backend implementing `getItem`/`setItem`/`removeItem`
 - `useCache` - enable or disable caching
+- `includeScheduled` - include scheduled posts (future-dated blogs) (default: `false`)
+- `allowedStatuses` - allowed publication statuses (array of strings) (default: `['published']`)
+- `includeDrafts` - include draft posts (default: `false`)
 
 > Direct repository settings are not accepted in the constructor. Use `token` and `secret` only for initialization, and use `setConfig()` only for non-sensitive runtime settings like cache control.
 
@@ -156,6 +168,9 @@ Fetches all blog metadata from the repository index.
 
 - `useCache` (boolean) — use cached index if available
 - `forceFresh` (boolean) — skip cache and fetch fresh
+- `includeScheduled` (boolean) — include scheduled posts (future-dated blogs)
+- `allowedStatuses` (string[]) — allowed publication statuses (default: `['published']`)
+- `includeDrafts` (boolean) — include draft posts (default: `false`)
 
 ```js
 const blogs = await blogsLib.getAllBlogs({ forceFresh: true });
@@ -186,6 +201,9 @@ Fetches a single blog markdown file and parses YAML metadata.
 - `useCache` (boolean)
 - `forceFresh` (boolean)
 - `parseYAML` (boolean)
+- `includeScheduled` (boolean) — include scheduled posts (checks and denies access if `false`)
+- `allowedStatuses` (string[]) — allowed publication statuses (default: `['published']`)
+- `includeDrafts` (boolean) — include draft posts (default: `false`)
 
 ```js
 const blog = await blogsLib.getBlogContent('getting-started-with-react');
@@ -216,6 +234,9 @@ Generate blog recommendations based on tag matching and preferences.
 - `count` — number of recommendations
 - `userPreferences` — explicit preference weights
 - `randomizeTies` — randomize blogs with equal scores
+- `includeScheduled` — include scheduled posts (future-dated blogs)
+- `allowedStatuses` — allowed publication statuses (array of strings)
+- `includeDrafts` — include draft posts (boolean)
 
 ```js
 const recommendations = blogsLib.getRecommendations(blogs, {
@@ -255,17 +276,26 @@ Search a blog list by query text.
 **Options:**
 
 - `searchFields` — array of fields to search (default: `['title', 'description', 'tags']`)
+- `includeScheduled` — include scheduled posts (future-dated blogs)
+- `allowedStatuses` — allowed publication statuses (array of strings)
+- `includeDrafts` — include draft posts (boolean)
 
 ```js
 const results = blogsLib.searchBlogs(blogs, 'react');
 ```
 
-### `filterByTags(blogs, tagFilter, mode?)`
+### `filterByTags(blogs, tagFilter, mode?, options?)`
 
 Filter blogs by one or more tags using `any` or `all` logic.
 
+**Options:**
+
+- `includeScheduled` — include scheduled posts (future-dated blogs)
+- `allowedStatuses` — allowed publication statuses (array of strings)
+- `includeDrafts` — include draft posts (boolean)
+
 ```js
-const filtered = blogsLib.filterByTags(blogs, ['react', 'javascript'], 'any');
+const filtered = blogsLib.filterByTags(blogs, ['react', 'javascript'], 'any', { includeScheduled: true });
 ```
 
 ### `clearCache(pattern?)`

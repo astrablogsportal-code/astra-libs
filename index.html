@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Astra SDK Studio • Blogs & Headless CMS</title>
-  
+
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+    rel="stylesheet">
 
   <style>
     :root {
@@ -48,7 +51,7 @@
       min-height: 100vh;
       line-height: 1.6;
       overflow-x: hidden;
-      background-image: 
+      background-image:
         radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
         radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.10) 0px, transparent 50%),
         radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.08) 0px, transparent 50%);
@@ -144,8 +147,17 @@
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.85); }
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.5;
+        transform: scale(0.85);
+      }
     }
 
     /* Container Layout */
@@ -419,8 +431,15 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* 2-Column Split Workspace (Editor + Output) */
@@ -675,10 +694,30 @@
       border-radius: 4px;
       letter-spacing: 0.05em;
     }
-    .tag-get { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .tag-query { background: rgba(6, 182, 212, 0.2); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
-    .tag-util { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
-    .tag-event { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .tag-get {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .tag-query {
+      background: rgba(6, 182, 212, 0.2);
+      color: #38bdf8;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .tag-util {
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .tag-event {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
 
     .api-name {
       font-family: 'JetBrains Mono', monospace;
@@ -727,6 +766,7 @@
       margin-top: 0.5rem;
       display: none;
     }
+
     .inline-result.has-content {
       display: block;
     }
@@ -756,22 +796,45 @@
       font-size: 0.8rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     }
+
     .event-log-item:hover {
       background: rgba(255, 255, 255, 0.03);
     }
 
-    .log-time { color: var(--text-sub); }
+    .log-time {
+      color: var(--text-sub);
+    }
+
     .log-badge {
       font-size: 0.68rem;
       font-weight: 700;
       padding: 0.15rem 0.45rem;
       border-radius: 4px;
     }
-    .log-badge.hit { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-    .log-badge.miss { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-    .log-badge.load { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
-    .log-badge.error { background: rgba(244, 63, 94, 0.2); color: #fda4af; }
-    .log-msg { color: var(--text-main); }
+
+    .log-badge.hit {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .log-badge.miss {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    .log-badge.load {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+    }
+
+    .log-badge.error {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fda4af;
+    }
+
+    .log-msg {
+      color: var(--text-main);
+    }
 
     /* Toast Notification */
     #toast {
@@ -795,6 +858,7 @@
       align-items: center;
       gap: 0.5rem;
     }
+
     #toast.show {
       opacity: 1;
       transform: translateY(0);
@@ -805,18 +869,22 @@
       width: 6px;
       height: 6px;
     }
+
     ::-webkit-scrollbar-track {
       background: transparent;
     }
+
     ::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.15);
       border-radius: 4px;
     }
+
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(255, 255, 255, 0.3);
     }
   </style>
 </head>
+
 <body>
 
   <!-- Top Header -->
@@ -824,7 +892,7 @@
     <a href="#" class="brand">
       <div class="brand-logo">
         <svg viewBox="0 0 24 24">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
         </svg>
       </div>
       <div>
@@ -839,7 +907,10 @@
         <span>SDK Ready</span>
       </div>
       <button class="btn btn-secondary btn-sm" onclick="copySnippet('npm install astra-blogs-lib')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
         <span>npm i astra-blogs-lib</span>
       </button>
     </div>
@@ -851,7 +922,8 @@
     <div class="hero">
       <h1 class="hero-title">Interactive SDK Workspace for <span>Blogs & Headless CMS</span></h1>
       <p class="hero-desc">
-        Explore, test, and integrate both <code>AstraBlogsLib</code> (Blogs SDK) and <code>AstraCmsLib</code> (Headless CMS) in real-time with AES-GCM encrypted tokens, client-side caching, and live console inspection.
+        Explore, test, and integrate both <code>AstraBlogsLib</code> (Blogs SDK) and <code>AstraCmsLib</code> (Headless
+        CMS) in real-time with AES-GCM encrypted tokens, client-side caching, and live console inspection.
       </p>
     </div>
 
@@ -859,10 +931,14 @@
     <div class="config-card">
       <div class="card-header">
         <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
           <span>Repository Access Credentials</span>
         </div>
-        <span style="font-size: 0.78rem; color: var(--text-sub);">Zero server roundtrips • Client AES-GCM Decryption</span>
+        <span style="font-size: 0.78rem; color: var(--text-sub);">Zero server roundtrips • Client AES-GCM
+          Decryption</span>
       </div>
 
       <div class="config-grid">
@@ -872,7 +948,8 @@
             <span style="font-size: 0.72rem; color: var(--text-sub);">SHA-256 Key Derivation</span>
           </label>
           <div class="input-wrapper">
-            <input id="secretInput" type="text" class="form-input" value="U2FudGhvc2gyMDExMjAwM0BydHltLWJsb2ctZmlsZXMvbWFpbg==" placeholder="Enter your secret" />
+            <input id="secretInput" type="text" class="form-input"
+              value="U2FudGhvc2gyMDExMjAwM0BydHltLWJsb2ctZmlsZXMvbWFpbg==" placeholder="Enter your secret" />
           </div>
         </div>
 
@@ -882,29 +959,45 @@
             <span style="font-size: 0.72rem; color: var(--text-sub);">iv:ciphertext format</span>
           </label>
           <div class="input-wrapper">
-            <input id="tokenInput" type="text" class="form-input" value="43de550068fad2fcd5d78d8e:982f8e58749871933703da748bd43d50c45b6ff99d3d96c45a6eb14f8d28f764837bebeb577d3374cd004e900b81f62bcd710bdda6662b14283c58b463bdb6175dc04cdb58df70b82e34e878f2ac3da0d34b240fe7d306fc5174b28dbd6b1beba86c3cb03c4875e80f1f5f247d85b1145e4f6c6cef7ac8f496d49dcc923e193b0bafc413c493dee6aaf33e552df50b9a555df6781ff2178ac91d85390afd0ef16ac27f08f173e79313d6ce8d713749202951cf5d126e7ae80d43f01805fca6c77c" placeholder="Paste encrypted token from blog-builder..." />
+            <input id="tokenInput" type="text" class="form-input"
+              value="43de550068fad2fcd5d78d8e:982f8e58749871933703da748bd43d50c45b6ff99d3d96c45a6eb14f8d28f764837bebeb577d3374cd004e900b81f62bcd710bdda6662b14283c58b463bdb6175dc04cdb58df70b82e34e878f2ac3da0d34b240fe7d306fc5174b28dbd6b1beba86c3cb03c4875e80f1f5f247d85b1145e4f6c6cef7ac8f496d49dcc923e193b0bafc413c493dee6aaf33e552df50b9a555df6781ff2178ac91d85390afd0ef16ac27f08f173e79313d6ce8d713749202951cf5d126e7ae80d43f01805fca6c77c"
+              placeholder="Paste encrypted token from blog-builder..." />
           </div>
         </div>
       </div>
 
       <div class="config-actions">
         <button id="fetchTokenConfig" class="btn btn-primary btn-sm">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
           <span>Fetch Blogs (AstraBlogsLib)</span>
         </button>
 
         <button id="fetchCmsDemo" class="btn btn-cms btn-sm">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
           <span>Fetch CMS Models & Data (AstraCmsLib)</span>
         </button>
 
         <button id="fetchInvalid" class="btn btn-secondary btn-sm">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
           <span>Test Fallback</span>
         </button>
 
         <button class="btn btn-secondary btn-sm" onclick="clearAllDemoStorage()" style="margin-left: auto;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
           <span>Clear Storage</span>
         </button>
       </div>
@@ -913,24 +1006,37 @@
     <!-- Navigation Tabs -->
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('playground', this)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
         <span>Live Code Playground</span>
       </button>
 
       <button class="tab-btn" onclick="switchTab('blogs-api', this)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
         <span>Blogs SDK (AstraBlogsLib)</span>
         <span class="tab-badge">14 Methods</span>
       </button>
 
       <button class="tab-btn" onclick="switchTab('cms-api', this)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
         <span>Headless CMS SDK (AstraCmsLib)</span>
         <span class="tab-badge">NEW</span>
       </button>
 
       <button class="tab-btn" onclick="switchTab('telemetry', this)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
         <span>Event Telemetry</span>
         <span class="tab-badge" id="eventCountBadge">0</span>
       </button>
@@ -939,7 +1045,7 @@
     <!-- TAB 1: Live Code Playground -->
     <div id="tab-playground" class="tab-pane active">
       <div class="split-view">
-        
+
         <!-- Left: Code Editor -->
         <div class="editor-card">
           <div class="editor-header">
@@ -951,7 +1057,10 @@
                   <span class="dot dot-green"></span>
                 </div>
                 <div class="editor-tab-title">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                  </svg>
                   <span>playground.js</span>
                 </div>
               </div>
@@ -964,15 +1073,18 @@
             <div class="editor-presets-bar">
               <span class="presets-label">PRESETS:</span>
               <div class="editor-presets">
-                <button type="button" class="preset-pill active-pill" data-preset="combined" onclick="loadPreset('combined', this)">
+                <button type="button" class="preset-pill active-pill" data-preset="combined"
+                  onclick="loadPreset('combined', this)">
                   <span class="preset-icon">⚡</span>
                   <span>Both (Blogs + CMS)</span>
                 </button>
-                <button type="button" class="preset-pill" data-preset="cms-models" onclick="loadPreset('cms-models', this)">
+                <button type="button" class="preset-pill" data-preset="cms-models"
+                  onclick="loadPreset('cms-models', this)">
                   <span class="preset-icon">📦</span>
                   <span>CMS Models</span>
                 </button>
-                <button type="button" class="preset-pill" data-preset="cms-records" onclick="loadPreset('cms-records', this)">
+                <button type="button" class="preset-pill" data-preset="cms-records"
+                  onclick="loadPreset('cms-records', this)">
                   <span class="preset-icon">📑</span>
                   <span>CMS Records</span>
                 </button>
@@ -984,7 +1096,8 @@
                   <span class="preset-icon">📄</span>
                   <span>Blog Content</span>
                 </button>
-                <button type="button" class="preset-pill" data-preset="recommend" onclick="loadPreset('recommend', this)">
+                <button type="button" class="preset-pill" data-preset="recommend"
+                  onclick="loadPreset('recommend', this)">
                   <span class="preset-icon">🎯</span>
                   <span>Recommendations</span>
                 </button>
@@ -1017,10 +1130,16 @@ return {
   cms: { totalModels: models.length, models, sampleRecords: cmsRecords }
 };</textarea>
 
-          <div style="padding: 0.75rem 1rem; background: #0d131f; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-size: 0.75rem; color: var(--text-sub);">Tip: Press <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Ctrl</kbd> + <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Enter</kbd> to execute</span>
+          <div
+            style="padding: 0.75rem 1rem; background: #0d131f; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.75rem; color: var(--text-sub);">Tip: Press <kbd
+                style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Ctrl</kbd> + <kbd
+                style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Enter</kbd> to
+              execute</span>
             <button id="runCustomCode" class="btn btn-primary btn-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
               <span>Execute Code</span>
             </button>
           </div>
@@ -1030,13 +1149,19 @@ return {
         <div class="terminal-card">
           <div class="terminal-topbar">
             <div class="terminal-title">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5"></polyline>
+                <line x1="12" y1="19" x2="20" y2="19"></line>
+              </svg>
               <span>Console Output</span>
             </div>
 
             <div class="terminal-actions">
               <button class="btn btn-secondary btn-sm" onclick="copyConsoleOutput()" title="Copy output">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
                 <span>Copy</span>
               </button>
               <button class="btn btn-secondary btn-sm" onclick="clearOutput()" title="Clear terminal">
@@ -1303,7 +1428,8 @@ return {
             <span class="api-name">cms.filterData(modelId, criteria)</span>
             <span class="api-method-tag tag-query">FILTER</span>
           </div>
-          <p class="api-desc">Query records using an object match <code>{ role: 'Engineer' }</code> or predicate function.</p>
+          <p class="api-desc">Query records using an object match <code>{ role: 'Engineer' }</code> or predicate
+            function.</p>
           <div class="api-code-snippet">const active = await cms.filterData('team_members', { isActive: true });</div>
           <div class="api-card-footer">
             <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('filterData')">Run filterData()</button>
@@ -1331,7 +1457,10 @@ return {
       <div class="event-log-container">
         <div class="editor-topbar">
           <div class="terminal-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 14 14"></polyline>
+            </svg>
             <span>Real-time SDK Lifecycle Events</span>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="clearEventLogs()">Clear Feed</button>
@@ -1351,12 +1480,15 @@ return {
 
   <!-- Toast Notification -->
   <div id="toast">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
     <span id="toastMsg">Action executed successfully</span>
   </div>
 
-  <!-- Include Core Library Script -->
-  <script src="./astra-blogs-lib.js"></script>
+  <!-- Include Core Library Script from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/astra-blogs-lib@latest/astra-blogs-lib.min.js"></script>
 
   <script>
     let demoLib = null;
@@ -1995,4 +2127,5 @@ return recommendations;`;
     }
   </script>
 </body>
+
 </html>

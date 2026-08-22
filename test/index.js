@@ -288,7 +288,224 @@ async function runTests() {
     console.log('✅ Test 8 passed');
   }
 
-  console.log('\n🎉 All tests passed successfully!');
+  // ==========================================
+  // AstraCmsLib Headless CMS Unit & Integration Tests
+  // ==========================================
+  console.log('\n🧪 Starting Astra CMS Library (AstraCmsLib) tests...');
+
+  const { AstraCmsLib } = AstraBlogsLib;
+  assert.ok(AstraCmsLib, 'AstraCmsLib should be exported on AstraBlogsLib');
+  assert.strictEqual(AstraBlogsLib.CMS, AstraCmsLib, 'AstraBlogsLib.CMS should alias AstraCmsLib');
+
+  const mockCmsModels = [
+    {
+      id: 'team_members',
+      name: 'Team Members',
+      description: 'Directory of company team members',
+      icon: 'FiUsers',
+      fields: [
+        { name: 'name', label: 'Full Name', type: 'text', required: true },
+        { name: 'role', label: 'Job Role', type: 'text', required: true },
+        { name: 'department', label: 'Department', type: 'select', options: ['Engineering', 'Design', 'Marketing'] },
+        { name: 'bio', label: 'Biography', type: 'rich_text' },
+        { name: 'experienceYears', label: 'Years of Experience', type: 'number' },
+        { name: 'isActive', label: 'Is Active', type: 'boolean' }
+      ],
+      createdAt: '2026-06-01T10:00:00.000Z',
+      updatedAt: '2026-06-01T10:00:00.000Z'
+    },
+    {
+      id: 'testimonials',
+      name: 'Customer Testimonials',
+      description: 'Client reviews and testimonials',
+      icon: 'FiMessageSquare',
+      fields: [
+        { name: 'clientName', label: 'Client Name', type: 'text', required: true },
+        { name: 'quote', label: 'Quote', type: 'textarea', required: true },
+        { name: 'rating', label: 'Rating', type: 'number' }
+      ]
+    }
+  ];
+
+  const mockTeamRecords = [
+    {
+      id: 'rec_alice',
+      name: 'Alice Johnson',
+      role: 'Lead Architect',
+      department: 'Engineering',
+      bio: 'Alice builds scalable cloud applications with React and Node.',
+      experienceYears: 8,
+      isActive: true,
+      createdAt: '2026-06-01T11:00:00.000Z'
+    },
+    {
+      id: 'rec_bob',
+      name: 'Bob Smith',
+      role: 'Frontend Developer',
+      department: 'Engineering',
+      bio: 'Bob specializes in modern UI design and animation.',
+      experienceYears: 4,
+      isActive: true,
+      createdAt: '2026-06-01T11:10:00.000Z'
+    },
+    {
+      id: 'rec_carol',
+      name: 'Carol White',
+      role: 'Product Designer',
+      department: 'Design',
+      bio: 'Carol crafts delightful and accessible user interfaces.',
+      experienceYears: 6,
+      isActive: false,
+      createdAt: '2026-06-01T11:20:00.000Z'
+    }
+  ];
+
+  // CMS Test 1: getModels() and getModel()
+  {
+    console.log('\nCMS Test 1: getModels() & getModel() caching and lookup');
+    const storage = createMockStorage();
+    storage.setItem('astra_cms_models_cache', JSON.stringify({
+      data: mockCmsModels,
+      timestamp: Date.now()
+    }));
+
+    const cms = new AstraCmsLib({ storage, useCache: true });
+    cms.config.owner = 'test-owner';
+    cms.config.repo = 'test-repo';
+    cms.config.branch = 'main';
+
+    let cacheHitFired = false;
+    let modelsLoadedFired = false;
+    cms.on('cacheHit', () => { cacheHitFired = true; });
+    cms.on('modelsLoaded', (models) => { modelsLoadedFired = true; });
+
+    const models = await cms.getModels();
+    assert.strictEqual(models.length, 2, 'Should return 2 CMS models from cache');
+    assert.ok(cacheHitFired, 'Should fire cacheHit event');
+    assert.ok(modelsLoadedFired, 'Should fire modelsLoaded event');
+
+    // Test getModel() by id and name
+    const teamModel = await cms.getModel('team_members');
+    assert.notStrictEqual(teamModel, null, 'Should find model by id');
+    assert.strictEqual(teamModel.name, 'Team Members');
+
+    const testimonialModel = await cms.getModel('Customer Testimonials');
+    assert.notStrictEqual(testimonialModel, null, 'Should find model by name');
+    assert.strictEqual(testimonialModel.id, 'testimonials');
+
+    const missingModel = await cms.getModel('non_existent');
+    assert.strictEqual(missingModel, null, 'Should return null for missing model');
+    console.log('✅ CMS Test 1 passed');
+  }
+
+  // CMS Test 2: getData() and getRecord()
+  {
+    console.log('\nCMS Test 2: getData() & getRecord() caching and lookup');
+    const storage = createMockStorage();
+    storage.setItem('astra_cms_data_team_members', JSON.stringify({
+      data: mockTeamRecords,
+      timestamp: Date.now()
+    }));
+
+    const cms = new AstraCmsLib({ storage, useCache: true });
+    cms.config.owner = 'test-owner';
+    cms.config.repo = 'test-repo';
+    cms.config.branch = 'main';
+
+    const records = await cms.getData('team_members');
+    assert.strictEqual(records.length, 3, 'Should return 3 records for team_members');
+
+    const alice = await cms.getRecord('team_members', 'rec_alice');
+    assert.notStrictEqual(alice, null, 'Should find Alice by ID');
+    assert.strictEqual(alice.name, 'Alice Johnson');
+    assert.strictEqual(alice.role, 'Lead Architect');
+
+    const unknownRec = await cms.getRecord('team_members', 'rec_unknown');
+    assert.strictEqual(unknownRec, null, 'Should return null for unknown record');
+    console.log('✅ CMS Test 2 passed');
+  }
+
+  // CMS Test 3: searchData()
+  {
+    console.log('\nCMS Test 3: searchData() querying');
+    const storage = createMockStorage();
+    storage.setItem('astra_cms_data_team_members', JSON.stringify({
+      data: mockTeamRecords,
+      timestamp: Date.now()
+    }));
+
+    const cms = new AstraCmsLib({ storage, useCache: true });
+    cms.config.owner = 'test-owner';
+    cms.config.repo = 'test-repo';
+    cms.config.branch = 'main';
+
+    // Global text search
+    const devSearch = await cms.searchData('team_members', 'Developer');
+    assert.strictEqual(devSearch.length, 1, 'Should find 1 record with Developer');
+    assert.strictEqual(devSearch[0].id, 'rec_bob');
+
+    // Field-specific search
+    const roleSearch = await cms.searchData('team_members', 'Architect', { searchFields: ['role'] });
+    assert.strictEqual(roleSearch.length, 1);
+    assert.strictEqual(roleSearch[0].id, 'rec_alice');
+
+    // Search matching in bio
+    const bioSearch = await cms.searchData('team_members', 'accessible');
+    assert.strictEqual(bioSearch.length, 1);
+    assert.strictEqual(bioSearch[0].id, 'rec_carol');
+
+    console.log('✅ CMS Test 3 passed');
+  }
+
+  // CMS Test 4: filterData() with predicate and object criteria
+  {
+    console.log('\nCMS Test 4: filterData() with predicate and object criteria');
+    const storage = createMockStorage();
+    storage.setItem('astra_cms_data_team_members', JSON.stringify({
+      data: mockTeamRecords,
+      timestamp: Date.now()
+    }));
+
+    const cms = new AstraCmsLib({ storage, useCache: true });
+    cms.config.owner = 'test-owner';
+    cms.config.repo = 'test-repo';
+    cms.config.branch = 'main';
+
+    // Filter using object criteria
+    const engineeringMembers = await cms.filterData('team_members', { department: 'Engineering' });
+    assert.strictEqual(engineeringMembers.length, 2, 'Should return 2 Engineering records');
+
+    const activeMembers = await cms.filterData('team_members', { isActive: true });
+    assert.strictEqual(activeMembers.length, 2, 'Should return 2 active records');
+
+    // Filter using predicate function
+    const seniorMembers = await cms.filterData('team_members', (rec) => rec.experienceYears >= 6);
+    assert.strictEqual(seniorMembers.length, 2, 'Should return 2 records with >= 6 years exp');
+    assert.ok(seniorMembers.some(r => r.id === 'rec_alice'));
+    assert.ok(seniorMembers.some(r => r.id === 'rec_carol'));
+
+    console.log('✅ CMS Test 4 passed');
+  }
+
+  // CMS Test 5: clearCache()
+  {
+    console.log('\nCMS Test 5: clearCache() cache eviction');
+    const storage = createMockStorage();
+    storage.setItem('astra_cms_models_cache', JSON.stringify({ data: mockCmsModels, timestamp: Date.now() }));
+    storage.setItem('astra_cms_data_team_members', JSON.stringify({ data: mockTeamRecords, timestamp: Date.now() }));
+    storage.setItem('astra_blogs_index_cache', JSON.stringify({ data: [], timestamp: Date.now() }));
+
+    const cms = new AstraCmsLib({ storage, useCache: true });
+    cms.clearCache('astra_cms_');
+
+    assert.strictEqual(storage.getItem('astra_cms_models_cache'), null, 'CMS models cache should be cleared');
+    assert.strictEqual(storage.getItem('astra_cms_data_team_members'), null, 'CMS data cache should be cleared');
+    assert.notStrictEqual(storage.getItem('astra_blogs_index_cache'), null, 'Blog cache should be preserved');
+
+    console.log('✅ CMS Test 5 passed');
+  }
+
+  console.log('\n🎉 All AstraBlogsLib and AstraCmsLib tests passed successfully!');
 }
 
 runTests().catch(err => {

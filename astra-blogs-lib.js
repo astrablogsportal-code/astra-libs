@@ -1106,13 +1106,492 @@ class AstraBlogsLib {
   }
 }
 
+/**
+ * Main library class for managing Headless CMS models and data from GitHub
+ */
+class AstraCmsLib {
+  static VERSION = AstraBlogsLib.VERSION;
+
+  /**
+   * Initialize the Astra CMS Library
+   * @param {Object} config - Configuration object
+   * @param {string} [config.token] - Encrypted initialization token that contains owner/repo/branch/githubToken
+   * @param {string} [config.secret] - Secret used to decrypt the encrypted token
+   * @param {number} [config.modelsCacheTTL=3600000] - Cache TTL for CMS models in milliseconds (default: 1 hour)
+   * @param {number} [config.dataCacheTTL=3600000] - Cache TTL for CMS data records in milliseconds (default: 1 hour)
+   * @param {Object} [config.storage=localStorage] - Storage mechanism (must have getItem/setItem/removeItem)
+   * @param {boolean} [config.useCache=true] - Whether to use local storage caching
+   * @throws {Error} When direct owner/repo/branch/githubToken config is supplied
+   */
+  constructor(config = {}) {
+    this.config = {
+      owner: null,
+      repo: null,
+      branch: null,
+      githubToken: null,
+      modelsCacheTTL: config.modelsCacheTTL || 3600000,
+      dataCacheTTL: config.dataCacheTTL || 3600000,
+      storage: config.storage || (typeof window !== 'undefined' ? window.localStorage : null),
+      useCache: config.useCache !== false
+    };
+    this.events = {};
+    this.baseURL = 'https://api.github.com';
+    this._decryptionPromise = null;
+
+    if (config.token && config.secret) {
+      this._decryptionPromise = this._decryptConfig(config.token, config.secret);
+    } else if (config.owner || config.repo || config.branch || config.githubToken) {
+      throw new Error('Direct configuration of owner/repo/branch/githubToken is not allowed. Provide encrypted token and secret.');
+    }
+  }
+
+  _getHeaders() {
+    const headers = {
+      'Accept': 'application/vnd.github.v3.raw',
+      'If-None-Match': ''
+    };
+    if (this.config.githubToken) {
+      headers['Authorization'] = `token ${this.config.githubToken}`;
+    }
+    return headers;
+  }
+
+  /**
+   * Get current SDK version
+   * @returns {string} Version string
+   */
+  getVersion() {
+    return AstraCmsLib.VERSION;
+  }
+
+  /**
+   * Subscribe to named events emitted by the library.
+   * @param {string} event - Event name
+   * @param {Function} callback - Callback to invoke
+   */
+  on(event, callback) {
+    if (!this.events[event]) this.events[event] = [];
+    this.events[event].push(callback);
+  }
+
+  /**
+   * Unsubscribe from named events.
+   * @param {string} event - Event name
+   * @param {Function} [callback] - Specific callback to remove, or remove all if omitted
+   */
+  off(event, callback) {
+    if (!this.events[event]) return;
+    if (!callback) {
+      delete this.events[event];
+      return;
+    }
+    this.events[event] = this.events[event].filter(cb => cb !== callback);
+  }
+
+  /**
+   * Subscribe to an event once.
+   * @param {string} event - Event name
+   * @param {Function} callback - Callback to invoke once
+   */
+  once(event, callback) {
+    const wrapper = data => {
+      this.off(event, wrapper);
+      callback(data);
+    };
+    this.on(event, wrapper);
+  }
+
+  /**
+   * Emit a named event with optional data.
+   * @param {string} event - Event name
+   * @param {any} [data] - Payload for listeners
+   */
+  emit(event, data) {
+    if (!this.events[event]) return;
+    this.events[event].forEach(cb => {
+      try {
+        cb(data);
+      } catch (error) {
+        console.error(`Error in event listener for ${event}:`, error);
+      }
+    });
+  }
+
+  async _applyDecryptedConfig() {
+    if (!this._decryptionPromise) return;
+    try {
+      await this._decryptionPromise;
+    } catch (error) {
+      console.error('Error decrypting CMS configuration token:', error);
+    } finally {
+      this._decryptionPromise = null;
+    }
+  }
+
+  _getMissingConfigKeys() {
+    return ['owner', 'repo', 'branch'].filter(key => !this.config[key]);
+  }
+
+  async _decryptConfig(token, secret) {
+    if (typeof window === 'undefined' || !window.crypto?.subtle) {
+      throw new Error('Web Crypto API is required to decrypt configuration values');
+    }
+    const decrypted = await this._aesGcmDecrypt(token, secret);
+    if (decrypted && typeof decrypted === 'object') {
+      const allowedKeys = ['owner', 'repo', 'branch', 'githubToken'];
+      const decryptedConfig = {};
+      allowedKeys.forEach(key => {
+        if (decrypted[key]) {
+          decryptedConfig[key] = decrypted[key];
+        }
+      });
+      this.config = { ...this.config, ...decryptedConfig };
+      console.log('🔐 Decrypted CMS configuration values successfully');
+    }
+  }
+
+  async _aesGcmDecrypt(token, secret) {
+    const enc = new TextEncoder();
+    const hash = await window.crypto.subtle.digest('SHA-256', enc.encode(secret));
+    const key = await window.crypto.subtle.importKey(
+      'raw',
+      hash,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+
+    const [ivHex, encryptedHex] = token.split(':');
+    const iv = Uint8Array.from(ivHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    const encryptedBuffer = Uint8Array.from(encryptedHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+    const decryptedBuffer = await window.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      encryptedBuffer
+    );
+
+    const dec = new TextDecoder();
+    return JSON.parse(dec.decode(decryptedBuffer));
+  }
+
+  _getFromStorage(key, ttl = null) {
+    if (!this.config.storage || !this.config.useCache) return null;
+    try {
+      const stored = this.config.storage.getItem(key);
+      if (!stored) return null;
+      const { data, timestamp } = JSON.parse(stored);
+      if (ttl && Date.now() - timestamp > ttl) {
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error(`Error reading from storage (${key}):`, error);
+      return null;
+    }
+  }
+
+  _saveToStorage(key, data) {
+    if (!this.config.storage || !this.config.useCache) return;
+    try {
+      this.config.storage.setItem(key, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+    } catch (error) {
+      console.error(`Error saving to storage (${key}):`, error);
+    }
+  }
+
+  /**
+   * Clear CMS cache data
+   * @param {string} [pattern='astra_cms_'] - Optional pattern to clear specific keys
+   */
+  clearCache(pattern = 'astra_cms_') {
+    if (!this.config.storage) return;
+    try {
+      const keys = [];
+      for (let i = 0; i < this.config.storage.length; i++) {
+        const key = this.config.storage.key(i);
+        if (!pattern || (key && key.includes(pattern))) {
+          keys.push(key);
+        }
+      }
+      keys.forEach(key => this.config.storage.removeItem(key));
+    } catch (error) {
+      console.error('Error clearing CMS cache:', error);
+    }
+  }
+
+  /**
+   * Fetch all CMS models definitions from GitHub
+   * @param {Object} [options={}] - Fetch options
+   * @param {boolean} [options.useCache=true] - Use cached data if available
+   * @param {boolean} [options.forceFresh=false] - Skip cache and fetch fresh data
+   * @returns {Promise<Array<Object>>} Array of CMS model schema definitions
+   */
+  async getModels(options = {}) {
+    await this._applyDecryptedConfig();
+
+    const missingKeys = this._getMissingConfigKeys();
+    if (missingKeys.length) {
+      console.error(`Invalid configuration key(s): ${missingKeys.join(', ')}`);
+      return [];
+    }
+
+    const { useCache = true, forceFresh = false } = options;
+    const cacheKey = 'astra_cms_models_cache';
+
+    if (useCache && !forceFresh) {
+      const cached = this._getFromStorage(cacheKey, this.config.modelsCacheTTL);
+      if (cached) {
+        console.log('📦 Returning CMS models from cache');
+        this.emit('cacheHit', cacheKey);
+        this.emit('modelsLoaded', cached);
+        return cached;
+      }
+      this.emit('cacheMiss', cacheKey);
+    }
+
+    try {
+      const url = `${this.baseURL}/repos/${this.config.owner}/${this.config.repo}/contents/cms/models.json`;
+      this.emit('fetchStarted', { key: cacheKey, url });
+      const response = await fetch(url, { headers: this._getHeaders() });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn('❌ CMS models file not found (404)');
+          return [];
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const modelsList = Array.isArray(data) ? data : [];
+
+      this._saveToStorage(cacheKey, modelsList);
+      console.log(`📦 Fetched ${modelsList.length} CMS models from repository`);
+      this.emit('modelsLoaded', modelsList);
+      return modelsList;
+    } catch (error) {
+      console.error('❌ Failed to fetch CMS models:', error);
+      this.emit('error', error);
+
+      const expired = this._getFromStorage(cacheKey);
+      if (expired) {
+        console.log('⚠️ Returning expired cached CMS models due to fetch error');
+        return Array.isArray(expired) ? expired : [];
+      }
+      return [];
+    }
+  }
+
+  /**
+   * Get a specific CMS model schema by its ID or Name
+   * @param {string} modelId - Model ID (e.g. 'team_members') or Name
+   * @param {Object} [options={}] - Fetch options
+   * @returns {Promise<Object|null>} Model definition or null if not found
+   */
+  async getModel(modelId, options = {}) {
+    if (!modelId) return null;
+    const models = await this.getModels(options);
+    const target = String(modelId).toLowerCase();
+    return models.find(m => String(m.id).toLowerCase() === target || String(m.name).toLowerCase() === target) || null;
+  }
+
+  /**
+   * Fetch all data records for a specific CMS model from GitHub
+   * @param {string} modelId - Model ID (e.g. 'team_members', 'testimonials')
+   * @param {Object} [options={}] - Fetch options
+   * @param {boolean} [options.useCache=true] - Use cached data if available
+   * @param {boolean} [options.forceFresh=false] - Skip cache and fetch fresh data
+   * @returns {Promise<Array<Object>>} Array of data record objects
+   */
+  async getData(modelId, options = {}) {
+    if (!modelId) return [];
+    await this._applyDecryptedConfig();
+
+    const missingKeys = this._getMissingConfigKeys();
+    if (missingKeys.length) {
+      console.error(`Invalid configuration key(s): ${missingKeys.join(', ')}`);
+      return [];
+    }
+
+    const { useCache = true, forceFresh = false } = options;
+    const cacheKey = `astra_cms_data_${modelId}`;
+
+    if (useCache && !forceFresh) {
+      const cached = this._getFromStorage(cacheKey, this.config.dataCacheTTL);
+      if (cached) {
+        console.log(`📑 Returning CMS records for model "${modelId}" from cache`);
+        this.emit('cacheHit', cacheKey);
+        this.emit('dataLoaded', { modelId, records: cached });
+        return cached;
+      }
+      this.emit('cacheMiss', cacheKey);
+    }
+
+    try {
+      const url = `${this.baseURL}/repos/${this.config.owner}/${this.config.repo}/contents/cms/data/${modelId}.json`;
+      this.emit('fetchStarted', { key: cacheKey, url });
+      const response = await fetch(url, { headers: this._getHeaders() });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`❌ CMS data for model "${modelId}" not found (404)`);
+          return [];
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const recordsList = Array.isArray(data) ? data : [];
+
+      this._saveToStorage(cacheKey, recordsList);
+      console.log(`📑 Fetched ${recordsList.length} records for model "${modelId}" from repository`);
+      this.emit('dataLoaded', { modelId, records: recordsList });
+      return recordsList;
+    } catch (error) {
+      console.error(`❌ Failed to fetch CMS data for model "${modelId}":`, error);
+      this.emit('error', error);
+
+      const expired = this._getFromStorage(cacheKey);
+      if (expired) {
+        console.log(`⚠️ Returning expired cached CMS data for "${modelId}" due to fetch error`);
+        return Array.isArray(expired) ? expired : [];
+      }
+      return [];
+    }
+  }
+
+  /**
+   * Fetch a single CMS record by its record ID
+   * @param {string} modelId - Model ID
+   * @param {string} recordId - Record ID (e.g. 'rec_abc123')
+   * @param {Object} [options={}] - Fetch options
+   * @returns {Promise<Object|null>} Found record object or null
+   */
+  async getRecord(modelId, recordId, options = {}) {
+    if (!modelId || !recordId) return null;
+    const records = await this.getData(modelId, options);
+    return records.find(r => r.id === recordId) || null;
+  }
+
+  /**
+   * Search records of a model by query text
+   * @param {string} modelId - Model ID
+   * @param {string} query - Search query
+   * @param {Object} [options={}] - Search and fetch options
+   * @param {Array<string>} [options.searchFields] - Specific fields to search within
+   * @returns {Promise<Array<Object>>} Matching records
+   */
+  async searchData(modelId, query = '', options = {}) {
+    const records = await this.getData(modelId, options);
+    if (!query || typeof query !== 'string' || !query.trim()) {
+      return records;
+    }
+
+    const q = query.toLowerCase().trim();
+    const { searchFields } = options;
+
+    return records.filter(record => {
+      if (Array.isArray(searchFields) && searchFields.length > 0) {
+        return searchFields.some(field => {
+          const val = record[field];
+          if (val === null || val === undefined) return false;
+          if (typeof val === 'object') return JSON.stringify(val).toLowerCase().includes(q);
+          return String(val).toLowerCase().includes(q);
+        });
+      }
+
+      return Object.values(record).some(val => {
+        if (val === null || val === undefined) return false;
+        if (typeof val === 'object') return JSON.stringify(val).toLowerCase().includes(q);
+        return String(val).toLowerCase().includes(q);
+      });
+    });
+  }
+
+  /**
+   * Filter records of a model by custom predicate function or key-value criteria
+   * @param {string} modelId - Model ID
+   * @param {Function|Object} criteria - Filter predicate function (record => boolean) or criteria object ({ field: value })
+   * @param {Object} [options={}] - Fetch options
+   * @returns {Promise<Array<Object>>} Filtered records
+   */
+  async filterData(modelId, criteria, options = {}) {
+    const records = await this.getData(modelId, options);
+    if (!criteria) return records;
+
+    if (typeof criteria === 'function') {
+      return records.filter(criteria);
+    }
+
+    if (typeof criteria === 'object') {
+      const entries = Object.entries(criteria);
+      return records.filter(record => {
+        return entries.every(([key, expectedVal]) => {
+          return record[key] === expectedVal;
+        });
+      });
+    }
+
+    return records;
+  }
+
+  /**
+   * Get current library configuration
+   * @returns {Object} Current configuration
+   */
+  getConfig() {
+    return { ...this.config };
+  }
+
+  /**
+   * Update library configuration
+   * @param {Object} newConfig - Partial configuration to update
+   * @param {number} [newConfig.modelsCacheTTL] - Cache TTL for models
+   * @param {number} [newConfig.dataCacheTTL] - Cache TTL for data records
+   * @param {Object} [newConfig.storage] - Storage backend
+   * @param {boolean} [newConfig.useCache] - Enable or disable caching
+   * @throws {Error} When direct owner/repo/branch/githubToken/token/secret config is supplied
+   */
+  setConfig(newConfig) {
+    if (!newConfig || typeof newConfig !== 'object') return;
+
+    const restrictedKeys = ['owner', 'repo', 'branch', 'githubToken', 'token', 'secret'];
+    const invalidKeys = restrictedKeys.filter(key => key in newConfig);
+
+    if (invalidKeys.length > 0) {
+      throw new Error(
+        `Direct configuration of sensitive values is not allowed (${invalidKeys.join(', ')}). ` +
+        'Use encrypted token and secret only.'
+      );
+    }
+
+    this.config = { ...this.config, ...newConfig };
+    console.log('⚙️ CMS Configuration updated');
+  }
+}
+
+// Attach CMS references onto AstraBlogsLib
+AstraBlogsLib.Cms = AstraCmsLib;
+AstraBlogsLib.CMS = AstraCmsLib;
+AstraBlogsLib.AstraCmsLib = AstraCmsLib;
+
 // Export for different module systems
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AstraBlogsLib;
+  module.exports.AstraBlogsLib = AstraBlogsLib;
+  module.exports.AstraCmsLib = AstraCmsLib;
+  module.exports.AstraCMS = AstraCmsLib;
+  module.exports.default = AstraBlogsLib;
 }
 if (typeof define === 'function' && define.amd) {
   define([], () => AstraBlogsLib);
 }
 if (typeof window !== 'undefined') {
   window.AstraBlogsLib = AstraBlogsLib;
+  window.AstraCmsLib = AstraCmsLib;
+  window.AstraCMS = AstraCmsLib;
 }

@@ -386,6 +386,55 @@ const html = blogsLib.convertMarkdownToHtml(blog.rawTotal, { includeStyles: true
 console.log(html.styledHtml);
 ```
 
+## Headless CMS Support (`AstraCmsLib`)
+
+`astra-libs` includes a dedicated **`AstraCmsLib`** class for managing and querying Headless CMS data models and records created by `blog-builder`.
+
+### CMS Features
+
+- Fetch CMS template models (`cms/models.json`) and specific model schema definitions
+- Fetch all data records for any model (`cms/data/{modelId}.json`)
+- Retrieve individual records by unique ID (`getRecord`)
+- Perform fuzzy/query searches across records and specific fields (`searchData`)
+- Filter records with custom predicate functions or object criteria (`filterData`)
+- Dual-tier caching with configurable TTL and automatic offline fallback
+- Lifecycle event hooks (`cacheHit`, `modelsLoaded`, `dataLoaded`, `error`)
+
+### Usage
+
+```js
+import { AstraCmsLib } from 'astra-blogs-lib';
+// Or: const { AstraCmsLib } = require('astra-blogs-lib');
+// Or in browser: const cmsLib = new AstraCmsLib({ token, secret });
+
+const cmsLib = new AstraCmsLib({
+  token: 'encrypted-token',
+  secret: 'decryption-secret'
+});
+
+// 1. Fetch all CMS models (schemas)
+const models = await cmsLib.getModels();
+console.log('Available Models:', models);
+
+// 2. Get a single model schema by ID
+const teamModel = await cmsLib.getModel('team_members');
+
+// 3. Fetch all records for a model
+const teamMembers = await cmsLib.getData('team_members');
+
+// 4. Get a specific record by ID
+const member = await cmsLib.getRecord('team_members', 'rec_123');
+
+// 5. Search records with a query text
+const engineers = await cmsLib.searchData('team_members', 'Engineer', {
+  searchFields: ['role', 'bio']
+});
+
+// 6. Filter records with criteria object or predicate function
+const activeMembers = await cmsLib.filterData('team_members', { isActive: true });
+const experienced = await cmsLib.filterData('team_members', r => r.experienceYears >= 5);
+```
+
 ## Notes
 
 - The library uses local storage caching by default in browser environments.
@@ -397,3 +446,4 @@ console.log(html.styledHtml);
 - [Full library documentation](ASTRA_BLOGS_LIBRARY_DOCUMENTATION.md)
 - [Usage guide](LIBRARY_USAGE_GUIDE.md)
 - [Framework examples](FRAMEWORK_EXAMPLES.md)
+

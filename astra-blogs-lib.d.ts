@@ -563,6 +563,292 @@ declare class AstraBlogsLib {
    * });
    */
   setConfig(newConfig: Partial<Omit<AstraBlogsRuntimeConfig, 'owner' | 'repo' | 'branch' | 'githubToken'>>): void;
+
+  /**
+   * Static reference to AstraCmsLib class
+   */
+  static CMS: typeof AstraCmsLib;
+  static Cms: typeof AstraCmsLib;
+  static AstraCmsLib: typeof AstraCmsLib;
 }
 
+/**
+ * Supported Headless CMS Field Types
+ */
+export type CmsFieldType =
+  | 'text'
+  | 'textarea'
+  | 'rich_text'
+  | 'number'
+  | 'boolean'
+  | 'select'
+  | 'image'
+  | 'date'
+  | 'email'
+  | 'url'
+  | 'list'
+  | 'object'
+  | 'array_object';
+
+/**
+ * CMS Field Definition Schema
+ */
+export interface CmsField {
+  name: string;
+  key?: string;
+  label: string;
+  type: CmsFieldType;
+  required?: boolean;
+  options?: string[];
+  fields?: CmsField[];
+}
+
+/**
+ * CMS Model Template Definition
+ */
+export interface CmsModel {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  fields: CmsField[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Dynamic CMS Data Record
+ */
+export interface CmsRecord {
+  id: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
+/**
+ * Configuration object for initializing AstraCmsLib
+ */
+export interface AstraCmsConfig {
+  /**
+   * Encrypted initialization token containing owner/repo/branch/githubToken
+   */
+  token?: string;
+
+  /**
+   * Secret used to decrypt the encrypted token
+   */
+  secret?: string;
+
+  /**
+   * Cache time-to-live for CMS models in milliseconds
+   * @default 3600000 (1 hour)
+   */
+  modelsCacheTTL?: number;
+
+  /**
+   * Cache time-to-live for CMS data records in milliseconds
+   * @default 3600000 (1 hour)
+   */
+  dataCacheTTL?: number;
+
+  /**
+   * Storage backend (default: window.localStorage in browser)
+   */
+  storage?: Storage | null;
+
+  /**
+   * Enable/disable caching
+   * @default true
+   */
+  useCache?: boolean;
+}
+
+/**
+ * Runtime configuration returned by AstraCmsLib.getConfig()
+ */
+export interface AstraCmsRuntimeConfig {
+  owner: string | null;
+  repo: string | null;
+  branch: string | null;
+  githubToken: string | null;
+  modelsCacheTTL: number;
+  dataCacheTTL: number;
+  storage: Storage | null;
+  useCache: boolean;
+}
+
+/**
+ * Fetch options for CMS operations
+ */
+export interface CmsFetchOptions {
+  /**
+   * Use cached data if available
+   * @default true
+   */
+  useCache?: boolean;
+
+  /**
+   * Skip cache and force fresh fetch from GitHub
+   * @default false
+   */
+  forceFresh?: boolean;
+}
+
+/**
+ * Search options for CMS data queries
+ */
+export interface CmsSearchOptions extends CmsFetchOptions {
+  /**
+   * Specific fields to search within
+   */
+  searchFields?: string[];
+}
+
+/**
+ * Main library class for managing Headless CMS models and data from GitHub
+ */
+declare class AstraCmsLib {
+  /**
+   * Library version exposed as a static field
+   */
+  static VERSION: string;
+
+  /**
+   * Initialize the Astra CMS Library
+   * 
+   * @param config - Configuration object
+   * 
+   * @example
+   * const cmsLib = new AstraCmsLib({
+   *   token: 'encrypted-token',
+   *   secret: 'decryption-secret'
+   * });
+   */
+  constructor(config?: AstraCmsConfig);
+
+  /**
+   * Get the current library version
+   */
+  getVersion(): string;
+
+  /**
+   * Subscribe to a library event
+   */
+  on(event: string, callback: (data?: any) => void): void;
+
+  /**
+   * Unsubscribe from a library event
+   */
+  off(event: string, callback?: (data?: any) => void): void;
+
+  /**
+   * Subscribe to a library event once
+   */
+  once(event: string, callback: (data?: any) => void): void;
+
+  /**
+   * Emit a library event
+   */
+  emit(event: string, data?: any): void;
+
+  /**
+   * Fetch all defined CMS models (schemas) from the repository
+   * 
+   * @param options - Fetch options
+   * @returns Promise resolving to array of CMS model schemas
+   * 
+   * @example
+   * const models = await cmsLib.getModels();
+   */
+  getModels(options?: CmsFetchOptions): Promise<CmsModel[]>;
+
+  /**
+   * Get a specific CMS model schema by its ID or Name
+   * 
+   * @param modelId - Model ID (e.g. 'team_members') or Name
+   * @param options - Fetch options
+   * @returns Promise resolving to Model definition or null if not found
+   * 
+   * @example
+   * const teamModel = await cmsLib.getModel('team_members');
+   */
+  getModel(modelId: string, options?: CmsFetchOptions): Promise<CmsModel | null>;
+
+  /**
+   * Fetch all data records for a specific CMS model
+   * 
+   * @param modelId - Model ID (e.g. 'team_members', 'features', 'pricing_plans')
+   * @param options - Fetch options
+   * @returns Promise resolving to array of data records
+   * 
+   * @example
+   * const team = await cmsLib.getData('team_members');
+   */
+  getData<T = CmsRecord>(modelId: string, options?: CmsFetchOptions): Promise<T[]>;
+
+  /**
+   * Fetch a single CMS record by its record ID
+   * 
+   * @param modelId - Model ID
+   * @param recordId - Record ID (e.g. 'rec_abc123')
+   * @param options - Fetch options
+   * @returns Promise resolving to Record object or null if not found
+   * 
+   * @example
+   * const member = await cmsLib.getRecord('team_members', 'rec_123');
+   */
+  getRecord<T = CmsRecord>(modelId: string, recordId: string, options?: CmsFetchOptions): Promise<T | null>;
+
+  /**
+   * Search records of a model by query text
+   * 
+   * @param modelId - Model ID
+   * @param query - Search query string
+   * @param options - Search and fetch options
+   * @returns Promise resolving to matching records
+   * 
+   * @example
+   * const results = await cmsLib.searchData('team_members', 'Engineer', { searchFields: ['role', 'bio'] });
+   */
+  searchData<T = CmsRecord>(modelId: string, query?: string, options?: CmsSearchOptions): Promise<T[]>;
+
+  /**
+   * Filter records of a model by custom predicate function or key-value criteria
+   * 
+   * @param modelId - Model ID
+   * @param criteria - Filter predicate function or key-value object
+   * @param options - Fetch options
+   * @returns Promise resolving to filtered records
+   * 
+   * @example
+   * const activeMembers = await cmsLib.filterData('team_members', { status: 'active' });
+   * const seniorMembers = await cmsLib.filterData('team_members', r => r.experienceYears >= 5);
+   */
+  filterData<T = CmsRecord>(
+    modelId: string,
+    criteria?: ((record: T) => boolean) | Partial<T>,
+    options?: CmsFetchOptions
+  ): Promise<T[]>;
+
+  /**
+   * Clear CMS cached data
+   * 
+   * @param pattern - Optional pattern to clear specific keys
+   */
+  clearCache(pattern?: string): void;
+
+  /**
+   * Get current CMS library configuration
+   */
+  getConfig(): AstraCmsRuntimeConfig;
+
+  /**
+   * Update CMS library configuration
+   */
+  setConfig(newConfig: Partial<Omit<AstraCmsRuntimeConfig, 'owner' | 'repo' | 'branch' | 'githubToken'>>): void;
+}
+
+export { AstraBlogsLib, AstraCmsLib };
 export default AstraBlogsLib;
+

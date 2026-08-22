@@ -1,290 +1,1470 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Astra Blogs Library Demo</title>
+  <title>Astra SDK Studio • Blogs & Headless CMS</title>
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 24px;
-      line-height: 1.5;
+    :root {
+      --bg-base: #0a0d14;
+      --bg-surface: #111726;
+      --bg-card: rgba(19, 26, 42, 0.75);
+      --bg-card-hover: rgba(28, 38, 62, 0.85);
+      --bg-input: #0c121e;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: #6366f1;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-light: rgba(99, 102, 241, 0.15);
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-sub: #64748b;
+      --code-bg: #090d16;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
     }
-    button {
-      margin: 8px 0;
-      padding: 10px 14px;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    textarea {
-      width: 100%;
-      min-height: 180px;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 0.95rem;
+
+    * {
       box-sizing: border-box;
-      margin: 8px 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.10) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(10, 13, 20, 0.85);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand-logo svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      margin-left: 0.25rem;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    /* Container Layout */
+    .app-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #818cf8, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 820px;
+    }
+
+    /* Configuration Panel (Glass Card) */
+    .config-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .config-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #6366f1, #06b6d4, #10b981);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-main);
+    }
+
+    .card-title svg {
+      width: 18px;
+      height: 18px;
+      color: #818cf8;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .config-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .config-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 0.65rem 1.15rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-cms {
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      color: white;
+      box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+    }
+
+    .btn-cms:hover {
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #fda4af;
+    }
+
+    .btn-danger:hover {
+      background: rgba(244, 63, 94, 0.2);
+    }
+
+    .btn-sm {
+      padding: 0.45rem 0.8rem;
+      font-size: 0.78rem;
+    }
+
+    /* Main Workspace Tabs */
+    .tabs-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.65rem 1.15rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: rgba(99, 102, 241, 0.16);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+    }
+
+    .tab-badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+    }
+
+    .tab-btn.active .tab-badge {
+      background: rgba(99, 102, 241, 0.4);
+      color: #ffffff;
+    }
+
+    /* Tab Panels */
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      gap: 1.5rem;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .tab-pane.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 2-Column Split Workspace (Editor + Output) */
+    .split-view {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .split-view {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Editor Box */
+    .editor-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Editor Header & Segmented Presets Bar */
+    .editor-header {
+      background: #0d131f;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-titlebar {
+      padding: 0.65rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .editor-dots-title {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .editor-tab-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .editor-shortcut-hint {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .editor-shortcut-hint kbd {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .editor-presets-bar {
+      padding: 0.5rem 1rem;
+      background: rgba(10, 14, 24, 0.7);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      overflow-x: auto;
+    }
+
+    .presets-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text-sub);
+      white-space: nowrap;
+    }
+
+    .editor-presets {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      flex-wrap: nowrap;
+    }
+
+    .preset-pill {
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 500;
+      padding: 0.32rem 0.7rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .preset-pill:hover {
+      background: rgba(99, 102, 241, 0.15);
+      color: #e0e7ff;
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .preset-pill.active-pill {
+      background: rgba(99, 102, 241, 0.28);
+      color: #ffffff;
+      border-color: #6366f1;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
+      font-weight: 600;
+    }
+
+    .preset-icon {
+      font-size: 0.8rem;
+    }
+
+    textarea#customCode {
+      width: 100%;
+      min-height: 420px;
+      background: var(--code-bg);
+      border: none;
+      color: #e2e8f0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      padding: 1.25rem;
+      resize: vertical;
+      outline: none;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    /* Output Terminal */
+    .terminal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 500px;
+    }
+
+    .terminal-topbar {
+      background: #0d131f;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .terminal-actions {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .terminal-body {
+      background: var(--code-bg);
+      padding: 1.25rem;
+      flex: 1;
+      overflow-y: auto;
+      max-height: 560px;
+    }
+
+    pre#output,
+    pre.section-output,
+    pre#output-customCode {
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* API Methods Grid Cards */
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .api-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .api-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .api-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(99, 102, 241, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .api-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .api-method-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+    .tag-get { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-query { background: rgba(6, 182, 212, 0.2); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .tag-util { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .tag-event { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .api-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .api-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .api-code-snippet {
+      background: var(--code-bg);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 0.9rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      overflow-x: auto;
       white-space: pre;
     }
-    pre {
-      background: #f4f4f4;
-      border: 1px solid #ddd;
-      padding: 12px;
-      white-space: pre-wrap;
-      word-break: break-word;
+
+    .api-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
-    .block {
-      margin-bottom: 24px;
+
+    .inline-result {
+      background: #0b101c;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      max-height: 180px;
+      overflow-y: auto;
+      color: #7dd3fc;
+      margin-top: 0.5rem;
+      display: none;
     }
-    .section-output {
-      background: #ffffff;
-      border: 1px solid #c8e1ff;
-      padding: 12px;
-      margin-top: 10px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    label {
+    .inline-result.has-content {
       display: block;
-      margin: 8px 0 4px;
-      font-weight: bold;
     }
-    input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
+
+    /* Event Logs Table */
+    .event-log-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .event-log-list {
+      list-style: none;
+      max-height: 380px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .event-log-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .event-log-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .log-time { color: var(--text-sub); }
+    .log-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
       border-radius: 4px;
+    }
+    .log-badge.hit { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .log-badge.miss { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .log-badge.load { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+    .log-badge.error { background: rgba(244, 63, 94, 0.2); color: #fda4af; }
+    .log-msg { color: var(--text-main); }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      border: 1px solid #6366f1;
+      color: #ffffff;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      font-size: 0.85rem;
+      font-weight: 500;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
     }
   </style>
 </head>
 <body>
-  <h1>Astra Blogs Library Demo</h1>
-  <p>This demo loads <code>astra-blogs-lib.js</code> and calls library methods using a provided token and secret.</p>
 
-  <div class="block">
-    <label for="secretInput">Secret</label>
-    <input id="secretInput" type="text" value="demo-secret" />
-  </div>
+  <!-- Top Header -->
+  <header>
+    <a href="#" class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div>
+        <span class="brand-title">Astra SDK Studio</span>
+        <span class="brand-badge" id="versionPill">v6.0.0</span>
+      </div>
+    </a>
 
-  <div class="block">
-    <label for="tokenInput">Encrypted token</label>
-    <input id="tokenInput" type="text" placeholder="Paste your encrypted token here" />
-  </div>
+    <div class="header-actions">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>SDK Ready</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="copySnippet('npm install astra-blogs-lib')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span>npm i astra-blogs-lib</span>
+      </button>
+    </div>
+  </header>
 
-  <div class="block">
-    <button id="fetchTokenConfig">Fetch Blogs with Token + Secret</button>
-    <button id="fetchInvalid">Fetch with Invalid Config</button>
-  </div>
+  <div class="app-container">
 
-  <div class="block">
-    <h2>Result</h2>
-    <pre id="output">Click a button to run a demo.</pre>
-  </div>
+    <!-- Hero Introduction -->
+    <div class="hero">
+      <h1 class="hero-title">Interactive SDK Workspace for <span>Blogs & Headless CMS</span></h1>
+      <p class="hero-desc">
+        Explore, test, and integrate both <code>AstraBlogsLib</code> (Blogs SDK) and <code>AstraCmsLib</code> (Headless CMS) in real-time with AES-GCM encrypted tokens, client-side caching, and live console inspection.
+      </p>
+    </div>
 
-  <div class="block">
-    <h2>Custom Code Playground</h2>
-    <p>Edit JavaScript code and execute it directly using the current demo library instance.</p>
-    <textarea id="customCode">const lib = await getDemoLib();
-const blogs = await lib.getAllBlogs();
-return blogs;</textarea>
-    <button id="runCustomCode">Run custom code</button>
-    <pre id="output-customCode" class="section-output">Custom code results will appear here.</pre>
-  </div>
+    <!-- Credentials & Token Setup Card -->
+    <div class="config-card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span>Repository Access Credentials</span>
+        </div>
+        <span style="font-size: 0.78rem; color: var(--text-sub);">Zero server roundtrips • Client AES-GCM Decryption</span>
+      </div>
 
-  <div class="block">
-    <h2>Library Examples</h2>
-    <p>Use these examples with a valid <code>token</code> and <code>secret</code> that decrypt to the repo configuration.</p>
-    <pre><code>const lib = new AstraBlogsLib({
-  token,
-  secret,
-  indexCacheTTL: 600000,      // 10 minutes
-  contentCacheTTL: 86400000,  // 24 hours
-  useCache: true,
-  storage: window.localStorage,
-  allowedStatuses: ['published', 'in-review', 'draft'], // Custom statuses
-  includeDrafts: false       // Set true to also include 'draft' posts
-});</code></pre>
+      <div class="config-grid">
+        <div class="form-group">
+          <label class="form-label" for="secretInput">
+            <span>Decryption Secret</span>
+            <span style="font-size: 0.72rem; color: var(--text-sub);">SHA-256 Key Derivation</span>
+          </label>
+          <div class="input-wrapper">
+            <input id="secretInput" type="text" class="form-input" value="U2FudGhvc2gyMDExMjAwM0BydHltLWJsb2ctZmlsZXMvbWFpbg==" placeholder="Enter your secret" />
+          </div>
+        </div>
 
-    <button id="execFullInit">Run full init example</button>
-    <h3>Full token/secret initialization</h3>
-    <p>Create a library instance with optional runtime settings, decrypt the config, and fetch blogs:</p>
-    <pre><code>async function runDemo(token, secret) {
-  const lib = new AstraBlogsLib({
-    token,
-    secret,
-    indexCacheTTL: 600000,
-    contentCacheTTL: 86400000,
-    useCache: true,
-    storage: window.localStorage
-  });
+        <div class="form-group">
+          <label class="form-label" for="tokenInput">
+            <span>Encrypted Token</span>
+            <span style="font-size: 0.72rem; color: var(--text-sub);">iv:ciphertext format</span>
+          </label>
+          <div class="input-wrapper">
+            <input id="tokenInput" type="text" class="form-input" value="43de550068fad2fcd5d78d8e:982f8e58749871933703da748bd43d50c45b6ff99d3d96c45a6eb14f8d28f764837bebeb577d3374cd004e900b81f62bcd710bdda6662b14283c58b463bdb6175dc04cdb58df70b82e34e878f2ac3da0d34b240fe7d306fc5174b28dbd6b1beba86c3cb03c4875e80f1f5f247d85b1145e4f6c6cef7ac8f496d49dcc923e193b0bafc413c493dee6aaf33e552df50b9a555df6781ff2178ac91d85390afd0ef16ac27f08f173e79313d6ce8d713749202951cf5d126e7ae80d43f01805fca6c77c" placeholder="Paste encrypted token from blog-builder..." />
+          </div>
+        </div>
+      </div>
 
-  // Fetch the blog list from GitHub repository
-  const blogs = await lib.getAllBlogs();
-  console.log('Blogs:', blogs);
+      <div class="config-actions">
+        <button id="fetchTokenConfig" class="btn btn-primary btn-sm">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          <span>Fetch Blogs (AstraBlogsLib)</span>
+        </button>
 
-  if (blogs.length > 0) {
-    const firstSlug = blogs[0].slug;
-    const blogContent = await lib.getBlogContent(firstSlug);
-    console.log('Blog content:', blogContent);
-  }
+        <button id="fetchCmsDemo" class="btn btn-cms btn-sm">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+          <span>Fetch CMS Models & Data (AstraCmsLib)</span>
+        </button>
 
-  console.log('Current config:', lib.getConfig());
+        <button id="fetchInvalid" class="btn btn-secondary btn-sm">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>Test Fallback</span>
+        </button>
+
+        <button class="btn btn-secondary btn-sm" onclick="clearAllDemoStorage()" style="margin-left: auto;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <span>Clear Storage</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('playground', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        <span>Live Code Playground</span>
+      </button>
+
+      <button class="tab-btn" onclick="switchTab('blogs-api', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        <span>Blogs SDK (AstraBlogsLib)</span>
+        <span class="tab-badge">14 Methods</span>
+      </button>
+
+      <button class="tab-btn" onclick="switchTab('cms-api', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span>Headless CMS SDK (AstraCmsLib)</span>
+        <span class="tab-badge">NEW</span>
+      </button>
+
+      <button class="tab-btn" onclick="switchTab('telemetry', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        <span>Event Telemetry</span>
+        <span class="tab-badge" id="eventCountBadge">0</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: Live Code Playground -->
+    <div id="tab-playground" class="tab-pane active">
+      <div class="split-view">
+        
+        <!-- Left: Code Editor -->
+        <div class="editor-card">
+          <div class="editor-header">
+            <div class="editor-titlebar">
+              <div class="editor-dots-title">
+                <div class="editor-dots">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="editor-tab-title">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                  <span>playground.js</span>
+                </div>
+              </div>
+              <div class="editor-shortcut-hint">
+                <span>Run Shortcut:</span>
+                <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+              </div>
+            </div>
+
+            <div class="editor-presets-bar">
+              <span class="presets-label">PRESETS:</span>
+              <div class="editor-presets">
+                <button type="button" class="preset-pill active-pill" data-preset="combined" onclick="loadPreset('combined', this)">
+                  <span class="preset-icon">⚡</span>
+                  <span>Both (Blogs + CMS)</span>
+                </button>
+                <button type="button" class="preset-pill" data-preset="cms-models" onclick="loadPreset('cms-models', this)">
+                  <span class="preset-icon">📦</span>
+                  <span>CMS Models</span>
+                </button>
+                <button type="button" class="preset-pill" data-preset="cms-records" onclick="loadPreset('cms-records', this)">
+                  <span class="preset-icon">📑</span>
+                  <span>CMS Records</span>
+                </button>
+                <button type="button" class="preset-pill" data-preset="blogs" onclick="loadPreset('blogs', this)">
+                  <span class="preset-icon">📚</span>
+                  <span>Blogs Index</span>
+                </button>
+                <button type="button" class="preset-pill" data-preset="content" onclick="loadPreset('content', this)">
+                  <span class="preset-icon">📄</span>
+                  <span>Blog Content</span>
+                </button>
+                <button type="button" class="preset-pill" data-preset="recommend" onclick="loadPreset('recommend', this)">
+                  <span class="preset-icon">🎯</span>
+                  <span>Recommendations</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <textarea id="customCode" spellcheck="false">// 🚀 Combined AstraBlogsLib & AstraCmsLib Direct Initialization
+const token = "43de550068fad2fcd5d78d8e:982f8e58749871933703da748bd43d50c45b6ff99d3d96c45a6eb14f8d28f764837bebeb577d3374cd004e900b81f62bcd710bdda6662b14283c58b463bdb6175dc04cdb58df70b82e34e878f2ac3da0d34b240fe7d306fc5174b28dbd6b1beba86c3cb03c4875e80f1f5f247d85b1145e4f6c6cef7ac8f496d49dcc923e193b0bafc413c493dee6aaf33e552df50b9a555df6781ff2178ac91d85390afd0ef16ac27f08f173e79313d6ce8d713749202951cf5d126e7ae80d43f01805fca6c77c";
+const secret = "U2FudGhvc2gyMDExMjAwM0BydHltLWJsb2ctZmlsZXMvbWFpbg==";
+
+// 1. Initialize Blog & CMS Libraries
+const blogsLib = new AstraBlogsLib({ token, secret });
+const cms = new AstraCmsLib({ token, secret });
+
+// 2. Fetch both in parallel
+const [blogs, models] = await Promise.all([
+  blogsLib.getAllBlogs(),
+  cms.getModels()
+]);
+
+// 3. Fetch CMS data records for the first model if available
+let cmsRecords = [];
+if (models.length > 0) {
+  cmsRecords = await cms.getData(models[0].id);
 }
 
-runDemo(token, secret).catch(console.error);</code></pre>
-    <pre id="output-fullInit" class="section-output">Result will appear here.</pre>
+return {
+  blogs: { total: blogs.length, list: blogs.slice(0, 2) },
+  cms: { totalModels: models.length, models, sampleRecords: cmsRecords }
+};</textarea>
 
-    <button id="execGetAllBlogs">Run getAllBlogs()</button>
-    <h3>getAllBlogs()</h3>
-    <p>Fetch the full index of published blog metadata from the configured repository. This returns an array of blog objects with title, slug, tags, and other metadata. You can pass options like <code>allowedStatuses</code> and <code>includeDrafts</code> to dynamically filter by status.</p>
-    <pre><code>// Fetch only published and in-review blogs
-const blogs = await lib.getAllBlogs({ allowedStatuses: ['published', 'in-review'] });
+          <div style="padding: 0.75rem 1rem; background: #0d131f; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.75rem; color: var(--text-sub);">Tip: Press <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Ctrl</kbd> + <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Enter</kbd> to execute</span>
+            <button id="runCustomCode" class="btn btn-primary btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>Execute Code</span>
+            </button>
+          </div>
+        </div>
 
-// Or easily include drafts
-const allBlogs = await lib.getAllBlogs({ includeDrafts: true });
-console.log(blogs);</code></pre>
-    <pre id="output-getAllBlogs" class="section-output">Result will appear here.</pre>
+        <!-- Right: Real-time Terminal Output -->
+        <div class="terminal-card">
+          <div class="terminal-topbar">
+            <div class="terminal-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+              <span>Console Output</span>
+            </div>
 
-    <button id="execGetAllCovers">Run getAllCovers()</button>
-    <h3>getAllCovers()</h3>
-    <p>Fetch the set of unique cover image URLs for all blogs in the repository index.</p>
-    <pre><code>const coverUrls = await lib.getAllCovers();
-console.log(coverUrls);</code></pre>
-    <pre id="output-getAllCovers" class="section-output">Result will appear here.</pre>
+            <div class="terminal-actions">
+              <button class="btn btn-secondary btn-sm" onclick="copyConsoleOutput()" title="Copy output">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copy</span>
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="clearOutput()" title="Clear terminal">
+                <span>Clear</span>
+              </button>
+            </div>
+          </div>
 
-    <button id="execGetCoverUrls">Run getCoverUrls(blogs)</button>
-    <h3>getCoverUrls(blogs)</h3>
-    <p>Extract cover image URLs from a blog metadata array, using either <code>cover</code> or <code>coverImage</code>.</p>
-    <pre><code>const coverUrls = lib.getCoverUrls(blogs);
-console.log(coverUrls);</code></pre>
-    <pre id="output-getCoverUrls" class="section-output">Result will appear here.</pre>
+          <div class="terminal-body">
+            <pre id="output">Click "Execute Code" or any API method card to run live...</pre>
+            <pre id="output-customCode" style="display: none;"></pre>
+          </div>
+        </div>
 
-    <button id="execGetBlogContent">Run getBlogContent('first blog slug')</button>
-    <h3>getBlogContent(slug)</h3>
-    <p>Fetch the markdown content for a single blog by slug. The result includes parsed YAML frontmatter metadata and the rendered markdown body.</p>
-    <pre><code>const blog = await lib.getBlogContent('getting-started-with-react');
-console.log(blog.metadata, blog.content);</code></pre>
-    <pre id="output-getBlogContent" class="section-output">Result will appear here.</pre>
+      </div>
+    </div>
 
-    <button id="execConvertMarkdownToHtml">Run convertMarkdownToHtml()</button>
-    <h3>convertMarkdownToHtml(markdown)</h3>
-    <p>Convert markdown content into HTML and include default markdown styles in the response.</p>
-    <pre><code>const result = lib.convertMarkdownToHtml(blog.rawTotal);
-console.log(result.styledHtml);</code></pre>
-    <pre id="output-convertMarkdownToHtml" class="section-output">Result will appear here.</pre>
+    <!-- TAB 2: Blogs SDK Methods -->
+    <div id="tab-blogs-api" class="tab-pane">
+      <div class="api-grid">
 
-    <button id="execGetVersion">Run getVersion()</button>
-    <h3>getVersion()</h3>
-    <p>Return the current SDK version from the library.</p>
-    <pre><code>const version = lib.getVersion();
-console.log(version);</code></pre>
-    <pre id="output-getVersion" class="section-output">Result will appear here.</pre>
+        <!-- Method: Full Init -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">new AstraBlogsLib(config)</span>
+            <span class="api-method-tag tag-util">CONSTRUCTOR</span>
+          </div>
+          <p class="api-desc">Initializes the library instance with encrypted token and decryption secret.</p>
+          <div class="api-code-snippet">const blogsLib = new AstraBlogsLib({ token, secret, useCache: true });</div>
+          <div class="api-card-footer">
+            <button id="execFullInit" class="btn btn-primary btn-sm">Run Full Init</button>
+          </div>
+          <div id="output-fullInit" class="inline-result"></div>
+        </div>
 
-    <button id="execRegisterEvents">Register event listeners</button>
-    <h3>Event System</h3>
-    <p>Subscribe to library lifecycle events to track cache hits, misses, fetch progress, and errors.</p>
-    <pre><code>lib.on('cacheHit', key => console.log('Cache hit:', key));
-lib.on('cacheMiss', key => console.log('Cache miss:', key));
-lib.on('blogsLoaded', blogs => console.log('Blogs loaded:', blogs.length));
-lib.on('error', error => console.error('Error:', error));</code></pre>
-    <pre id="output-registerEvents" class="section-output">Register event listeners then run a fetch to see events.</pre>
+        <!-- Method: getAllBlogs -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">getAllBlogs(options?)</span>
+            <span class="api-method-tag tag-get">GET</span>
+          </div>
+          <p class="api-desc">Fetch the blog metadata index from GitHub with client-side caching.</p>
+          <div class="api-code-snippet">const blogs = await blogsLib.getAllBlogs({ includeDrafts: false });</div>
+          <div class="api-card-footer">
+            <button id="execGetAllBlogs" class="btn btn-primary btn-sm">Run getAllBlogs()</button>
+          </div>
+          <div id="output-getAllBlogs" class="inline-result"></div>
+        </div>
 
-    <button id="execGetRecommendations">Run getRecommendations()</button>
-    <h3>getRecommendations(blogs, options)</h3>
-    <p>Generate a ranked list of blog recommendations using tag overlap and optional user preference weights.</p>
-    <pre><code>const recommendations = lib.getRecommendations(blogs, {
-  count: 5,
-  userPreferences: { react: 3, javascript: 2 }
-});
-console.log(recommendations);</code></pre>
-    <pre id="output-getRecommendations" class="section-output">Result will appear here.</pre>
+        <!-- Method: getBlogContent -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">getBlogContent(slug)</span>
+            <span class="api-method-tag tag-get">GET</span>
+          </div>
+          <p class="api-desc">Fetch markdown body and parsed YAML frontmatter for a specific post.</p>
+          <div class="api-code-snippet">const blog = await blogsLib.getBlogContent(slug);</div>
+          <div class="api-card-footer">
+            <button id="execGetBlogContent" class="btn btn-primary btn-sm">Run getBlogContent()</button>
+          </div>
+          <div id="output-getBlogContent" class="inline-result"></div>
+        </div>
 
-    <button id="execTrackReadBlog">Run trackReadBlog()</button>
-    <h3>trackReadBlog(tags, weight)</h3>
-    <p>Record a reading interaction with blog tags to build or update personal recommendation preferences in storage.</p>
-    <pre><code>lib.trackReadBlog(['react', 'web'], 1);
-const prefs = lib.getUserPreferences();
-console.log(prefs);</code></pre>
-    <pre id="output-trackReadBlog" class="section-output">Result will appear here.</pre>
+        <!-- Method: convertMarkdownToHtml -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">convertMarkdownToHtml(md)</span>
+            <span class="api-method-tag tag-util">RENDER</span>
+          </div>
+          <p class="api-desc">Render markdown content to clean HTML with optional styled wrapper.</p>
+          <div class="api-code-snippet">const { html, styledHtml } = blogsLib.convertMarkdownToHtml(md);</div>
+          <div class="api-card-footer">
+            <button id="execConvertMarkdownToHtml" class="btn btn-primary btn-sm">Convert Markdown</button>
+          </div>
+          <div id="output-convertMarkdownToHtml" class="inline-result"></div>
+        </div>
 
-    <button id="execGetUserPreferences">Run getUserPreferences()</button>
-    <h3>getUserPreferences()</h3>
-    <p>Read the stored user preference profile that is used to personalize recommendations.</p>
-    <pre><code>const preferences = lib.getUserPreferences();
-console.log(preferences);</code></pre>
-    <pre id="output-getUserPreferences" class="section-output">Result will appear here.</pre>
+        <!-- Method: getAllCovers & getCoverUrls -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">getAllCovers() / getCoverUrls()</span>
+            <span class="api-method-tag tag-get">ASSETS</span>
+          </div>
+          <p class="api-desc">Extract all unique cover image URLs from repository blogs.</p>
+          <div class="api-code-snippet">const covers = await blogsLib.getAllCovers();</div>
+          <div class="api-card-footer" style="gap: 0.5rem;">
+            <button id="execGetAllCovers" class="btn btn-secondary btn-sm">getAllCovers()</button>
+            <button id="execGetCoverUrls" class="btn btn-secondary btn-sm">getCoverUrls(blogs)</button>
+          </div>
+          <div id="output-getAllCovers" class="inline-result"></div>
+          <div id="output-getCoverUrls" class="inline-result"></div>
+        </div>
 
-    <button id="execClearUserPreferences">Run clearUserPreferences()</button>
-    <h3>clearUserPreferences()</h3>
-    <p>Clear any stored reading preferences from the configured storage mechanism.</p>
-    <pre><code>lib.clearUserPreferences();</code></pre>
-    <pre id="output-clearUserPreferences" class="section-output">Result will appear here.</pre>
+        <!-- Method: searchBlogs -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">searchBlogs(blogs, query)</span>
+            <span class="api-method-tag tag-query">SEARCH</span>
+          </div>
+          <p class="api-desc">Multi-field text search matching title, description, and tags.</p>
+          <div class="api-code-snippet">const results = blogsLib.searchBlogs(blogs, 'react');</div>
+          <div class="api-card-footer">
+            <button id="execSearchBlogs" class="btn btn-primary btn-sm">Run searchBlogs()</button>
+          </div>
+          <div id="output-searchBlogs" class="inline-result"></div>
+        </div>
 
-    <button id="execSearchBlogs">Run searchBlogs()</button>
-    <h3>searchBlogs(blogs, query, options)</h3>
-    <p>Filter a list of blogs by query text across title, description, tags, or other searchable fields.</p>
-    <pre><code>const filtered = lib.searchBlogs(blogs, 'react', {
-  searchFields: ['title', 'description', 'tags']
-});
-console.log(filtered);</code></pre>
-    <pre id="output-searchBlogs" class="section-output">Result will appear here.</pre>
+        <!-- Method: filterByTags -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">filterByTags(blogs, tags, mode)</span>
+            <span class="api-method-tag tag-query">FILTER</span>
+          </div>
+          <p class="api-desc">Filter blogs with OR ('any') or AND ('all') tag matching.</p>
+          <div class="api-code-snippet">const filtered = blogsLib.filterByTags(blogs, ['react', 'web'], 'any');</div>
+          <div class="api-card-footer">
+            <button id="execFilterByTags" class="btn btn-primary btn-sm">Run filterByTags()</button>
+          </div>
+          <div id="output-filterByTags" class="inline-result"></div>
+        </div>
 
-    <button id="execFilterByTags">Run filterByTags()</button>
-    <h3>filterByTags(blogs, tagFilter, mode)</h3>
-    <p>Filter blogs by one or more tags, using either any-match or all-match logic.</p>
-    <pre><code>const filteredTags = lib.filterByTags(blogs, ['react', 'javascript'], 'any');
-console.log(filteredTags);</code></pre>
-    <pre id="output-filterByTags" class="section-output">Result will appear here.</pre>
+        <!-- Method: getRecommendations -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">getRecommendations(blogs)</span>
+            <span class="api-method-tag tag-query">AI / RANK</span>
+          </div>
+          <p class="api-desc">Calculate weighted recommendations based on reading history tags.</p>
+          <div class="api-code-snippet">const recs = blogsLib.getRecommendations(blogs, { count: 3 });</div>
+          <div class="api-card-footer">
+            <button id="execGetRecommendations" class="btn btn-primary btn-sm">Get Recommendations</button>
+          </div>
+          <div id="output-getRecommendations" class="inline-result"></div>
+        </div>
 
-    <button id="execGetConfig">Run getConfig()</button>
-    <h3>getConfig()</h3>
-    <p>Return the current library configuration, excluding decrypted secrets.</p>
-    <pre><code>console.log(lib.getConfig());</code></pre>
-    <pre id="output-getConfig" class="section-output">Result will appear here.</pre>
+        <!-- Method: User Preferences -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">trackReadBlog() & Preferences</span>
+            <span class="api-method-tag tag-util">TRACKING</span>
+          </div>
+          <p class="api-desc">Track user interactions to build recommendation preferences.</p>
+          <div class="api-code-snippet">blogsLib.trackReadBlog(['react'], 1);</div>
+          <div class="api-card-footer" style="gap: 0.4rem; flex-wrap: wrap;">
+            <button id="execTrackReadBlog" class="btn btn-secondary btn-sm">Track Read</button>
+            <button id="execGetUserPreferences" class="btn btn-secondary btn-sm">Get Prefs</button>
+            <button id="execClearUserPreferences" class="btn btn-danger btn-sm">Clear Prefs</button>
+          </div>
+          <div id="output-trackReadBlog" class="inline-result"></div>
+          <div id="output-getUserPreferences" class="inline-result"></div>
+          <div id="output-clearUserPreferences" class="inline-result"></div>
+        </div>
 
-    <button id="execSetConfig">Run setConfig({ useCache: false })</button>
-    <h3>setConfig(newConfig)</h3>
-    <p>Update runtime settings such as cache TTL or storage options without reinitializing the library.</p>
-    <pre><code>lib.setConfig({ useCache: false });</code></pre>
-    <pre id="output-setConfig" class="section-output">Result will appear here.</pre>
+        <!-- Method: Events, Version, Cache -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">Configuration & Cache</span>
+            <span class="api-method-tag tag-event">SYSTEM</span>
+          </div>
+          <p class="api-desc">Inspect configuration, listen to events, or evict storage cache.</p>
+          <div class="api-code-snippet">blogsLib.clearCache('astra_');</div>
+          <div class="api-card-footer" style="gap: 0.4rem; flex-wrap: wrap;">
+            <button id="execGetVersion" class="btn btn-secondary btn-sm">getVersion()</button>
+            <button id="execGetConfig" class="btn btn-secondary btn-sm">getConfig()</button>
+            <button id="execSetConfig" class="btn btn-secondary btn-sm">setConfig()</button>
+            <button id="execRegisterEvents" class="btn btn-secondary btn-sm">Hook Events</button>
+            <button id="execClearCache" class="btn btn-danger btn-sm">Clear Cache</button>
+          </div>
+          <div id="output-getVersion" class="inline-result"></div>
+          <div id="output-getConfig" class="inline-result"></div>
+          <div id="output-setConfig" class="inline-result"></div>
+          <div id="output-registerEvents" class="inline-result"></div>
+          <div id="output-clearCache" class="inline-result"></div>
+        </div>
 
-    <button id="execClearCache">Run clearCache('astra_blog_content_')</button>
-    <h3>clearCache(pattern)</h3>
-    <p>Clear cached blog data from storage. Provide a key pattern to remove specific cache entries.</p>
-    <pre><code>lib.clearCache('astra_blog_content_');</code></pre>
-    <pre id="output-clearCache" class="section-output">Result will appear here.</pre>
+      </div>
+    </div>
+
+    <!-- TAB 3: Headless CMS SDK Methods -->
+    <div id="tab-cms-api" class="tab-pane">
+      <div class="api-grid">
+
+        <!-- CMS Constructor -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">new AstraCmsLib(config)</span>
+            <span class="api-method-tag tag-util">CMS CLASS</span>
+          </div>
+          <p class="api-desc">Standalone Headless CMS client for models, schemas, and dynamic records.</p>
+          <div class="api-code-snippet">const cms = new AstraCmsLib({ token, secret });</div>
+          <div class="api-card-footer">
+            <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('init')">Initialize CMS</button>
+          </div>
+        </div>
+
+        <!-- CMS getModels -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">cms.getModels(options?)</span>
+            <span class="api-method-tag tag-get">SCHEMAS</span>
+          </div>
+          <p class="api-desc">Fetches all defined template models (schemas) from <code>cms/models.json</code>.</p>
+          <div class="api-code-snippet">const models = await cms.getModels();</div>
+          <div class="api-card-footer">
+            <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('getModels')">Run getModels()</button>
+          </div>
+        </div>
+
+        <!-- CMS getModel -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">cms.getModel(modelId)</span>
+            <span class="api-method-tag tag-get">SCHEMA</span>
+          </div>
+          <p class="api-desc">Find a specific CMS model schema by its unique ID or display name.</p>
+          <div class="api-code-snippet">const teamModel = await cms.getModel('team_members');</div>
+          <div class="api-card-footer">
+            <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('getModel')">Run getModel()</button>
+          </div>
+        </div>
+
+        <!-- CMS getData -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">cms.getData(modelId, options?)</span>
+            <span class="api-method-tag tag-get">RECORDS</span>
+          </div>
+          <p class="api-desc">Fetch all data records for a specific model from <code>cms/data/{modelId}.json</code>.</p>
+          <div class="api-code-snippet">const records = await cms.getData('team_members');</div>
+          <div class="api-card-footer">
+            <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('getData')">Run getData()</button>
+          </div>
+        </div>
+
+        <!-- CMS getRecord -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">cms.getRecord(modelId, recordId)</span>
+            <span class="api-method-tag tag-get">SINGLE</span>
+          </div>
+          <p class="api-desc">Retrieve a single CMS data record by its unique record identifier.</p>
+          <div class="api-code-snippet">const rec = await cms.getRecord('team_members', 'rec_123');</div>
+          <div class="api-card-footer">
+            <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('getRecord')">Run getRecord()</button>
+          </div>
+        </div>
+
+        <!-- CMS searchData -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">cms.searchData(modelId, query)</span>
+            <span class="api-method-tag tag-query">SEARCH</span>
+          </div>
+          <p class="api-desc">Search records across text, tags, JSON objects, or specific fields.</p>
+          <div class="api-code-snippet">const matches = await cms.searchData('team_members', 'Lead');</div>
+          <div class="api-card-footer">
+            <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('searchData')">Run searchData()</button>
+          </div>
+        </div>
+
+        <!-- CMS filterData -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">cms.filterData(modelId, criteria)</span>
+            <span class="api-method-tag tag-query">FILTER</span>
+          </div>
+          <p class="api-desc">Query records using an object match <code>{ role: 'Engineer' }</code> or predicate function.</p>
+          <div class="api-code-snippet">const active = await cms.filterData('team_members', { isActive: true });</div>
+          <div class="api-card-footer">
+            <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('filterData')">Run filterData()</button>
+          </div>
+        </div>
+
+        <!-- CMS clearCache -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">cms.clearCache(pattern?)</span>
+            <span class="api-method-tag tag-util">CACHE</span>
+          </div>
+          <p class="api-desc">Evict cached CMS models and data records without wiping blog cache.</p>
+          <div class="api-code-snippet">cms.clearCache('astra_cms_');</div>
+          <div class="api-card-footer">
+            <button class="btn btn-danger btn-sm" onclick="runCmsSnippet('clearCache')">Clear CMS Cache</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 4: Telemetry & Event Log -->
+    <div id="tab-telemetry" class="tab-pane">
+      <div class="event-log-container">
+        <div class="editor-topbar">
+          <div class="terminal-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            <span>Real-time SDK Lifecycle Events</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="clearEventLogs()">Clear Feed</button>
+        </div>
+
+        <ul id="eventLogList" class="event-log-list">
+          <li class="event-log-item">
+            <span class="log-time">[Init]</span>
+            <span class="log-badge load">READY</span>
+            <span class="log-msg">SDK Telemetry bus initialized. Perform operations to view live events.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
   </div>
 
+  <!-- Toast Notification -->
+  <div id="toast">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    <span id="toastMsg">Action executed successfully</span>
+  </div>
+
+  <!-- Include Core Library Script -->
   <script src="./astra-blogs-lib.js"></script>
+
   <script>
     let demoLib = null;
     let demoToken = '';
     let demoSecret = '';
+    let eventCount = 0;
+
+    const DEFAULT_TOKEN = "43de550068fad2fcd5d78d8e:982f8e58749871933703da748bd43d50c45b6ff99d3d96c45a6eb14f8d28f764837bebeb577d3374cd004e900b81f62bcd710bdda6662b14283c58b463bdb6175dc04cdb58df70b82e34e878f2ac3da0d34b240fe7d306fc5174b28dbd6b1beba86c3cb03c4875e80f1f5f247d85b1145e4f6c6cef7ac8f496d49dcc923e193b0bafc413c493dee6aaf33e552df50b9a555df6781ff2178ac91d85390afd0ef16ac27f08f173e79313d6ce8d713749202951cf5d126e7ae80d43f01805fca6c77c";
+    const DEFAULT_SECRET = "U2FudGhvc2gyMDExMjAwM0BydHltLWJsb2ctZmlsZXMvbWFpbg==";
+
+    // Toast notification
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const msg = document.getElementById('toastMsg');
+      if (toast && msg) {
+        msg.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2600);
+      }
+    }
+
+    function copySnippet(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard!');
+      });
+    }
+
+    function copyConsoleOutput() {
+      const output = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(output).then(() => {
+        showToast('Console output copied!');
+      });
+    }
+
+    function clearOutput() {
+      setOutput('Terminal cleared. Click a button to run...');
+    }
+
+    function clearAllDemoStorage() {
+      localStorage.clear();
+      showToast('Local Storage cleared successfully!');
+      logEvent('CLEAR', 'miss', 'Cleared all local storage keys');
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+      btn.classList.add('active');
+      const pane = document.getElementById(`tab-${tabId}`);
+      if (pane) pane.classList.add('active');
+    }
+
+    function logEvent(type, badgeClass, message) {
+      const list = document.getElementById('eventLogList');
+      if (!list) return;
+
+      eventCount++;
+      const badge = document.getElementById('eventCountBadge');
+      if (badge) badge.textContent = eventCount;
+
+      const now = new Date().toLocaleTimeString();
+      const li = document.createElement('li');
+      li.className = 'event-log-item';
+      li.innerHTML = `
+        <span class="log-time">[${now}]</span>
+        <span class="log-badge ${badgeClass}">${type}</span>
+        <span class="log-msg">${message}</span>
+      `;
+      list.prepend(li);
+    }
+
+    function clearEventLogs() {
+      const list = document.getElementById('eventLogList');
+      if (list) list.innerHTML = '';
+      eventCount = 0;
+      const badge = document.getElementById('eventCountBadge');
+      if (badge) badge.textContent = '0';
+    }
 
     function setOutput(value) {
-      document.getElementById('output').textContent = value;
+      const out = document.getElementById('output');
+      if (out) {
+        out.textContent = typeof value === 'object' ? JSON.stringify(value, null, 2) : value;
+      }
     }
 
     function setSectionOutput(id, value) {
       const el = document.getElementById(id);
       if (el) {
-        el.textContent = value;
+        el.textContent = typeof value === 'object' ? JSON.stringify(value, null, 2) : value;
+        el.classList.add('has-content');
       }
     }
 
     function getTokenSecret() {
+      const t = document.getElementById('tokenInput')?.value.trim();
+      const s = document.getElementById('secretInput')?.value.trim();
       return {
-        token: document.getElementById('tokenInput').value.trim(),
-        secret: document.getElementById('secretInput').value.trim()
+        token: t || DEFAULT_TOKEN,
+        secret: s || DEFAULT_SECRET
       };
     }
 
     async function getDemoLib() {
       const { token, secret } = getTokenSecret();
       if (!token || !secret) {
-        throw new Error('Please provide both token and secret values.');
+        throw new Error('Please provide both token and secret values in the configuration card.');
       }
       if (demoLib && demoToken === token && demoSecret === secret) {
         return demoLib;
@@ -292,9 +1472,165 @@ console.log(filteredTags);</code></pre>
       demoLib = new AstraBlogsLib({ token, secret });
       demoToken = token;
       demoSecret = secret;
+
+      // Attach event telemetry
+      demoLib.on('cacheHit', key => logEvent('CACHE_HIT', 'hit', `Storage hit for key: ${key}`));
+      demoLib.on('cacheMiss', key => logEvent('CACHE_MISS', 'miss', `Storage miss for key: ${key}`));
+      demoLib.on('blogsLoaded', blogs => logEvent('BLOGS_LOADED', 'load', `Loaded ${blogs.length} blog posts`));
+      demoLib.on('error', err => logEvent('ERROR', 'error', err.message || String(err)));
+
       return demoLib;
     }
 
+    function loadPreset(name, el) {
+      const codeArea = document.getElementById('customCode');
+      if (!codeArea) return;
+
+      // Update active pill highlight
+      document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active-pill'));
+      if (el) {
+        el.classList.add('active-pill');
+      } else {
+        const target = document.querySelector(`.preset-pill[data-preset="${name}"]`);
+        if (target) target.classList.add('active-pill');
+      }
+
+      if (name === 'combined') {
+        codeArea.value = `// 🚀 Both AstraBlogsLib and AstraCmsLib Direct Usage
+const token = "${DEFAULT_TOKEN}";
+const secret = "${DEFAULT_SECRET}";
+
+const blogsLib = new AstraBlogsLib({ token, secret });
+const cms = new AstraCmsLib({ token, secret });
+
+const blogs = await blogsLib.getAllBlogs();
+const cmsModels = await cms.getModels();
+
+return {
+  totalBlogs: blogs.length,
+  totalCmsModels: cmsModels.length,
+  blogsSample: blogs.slice(0, 2),
+  cmsModels
+};`;
+      } else if (name === 'cms-models') {
+        codeArea.value = `// 🚀 Headless CMS Models Fetching
+const cms = new AstraCmsLib({
+  token: "${DEFAULT_TOKEN}",
+  secret: "${DEFAULT_SECRET}"
+});
+
+const models = await cms.getModels();
+return models;`;
+      } else if (name === 'cms-records') {
+        codeArea.value = `// 🚀 Headless CMS Records Fetching
+const cms = new AstraCmsLib({
+  token: "${DEFAULT_TOKEN}",
+  secret: "${DEFAULT_SECRET}"
+});
+
+const models = await cms.getModels();
+if (!models.length) return "No CMS models found. Create one in blog-builder!";
+
+const modelId = models[0].id;
+const records = await cms.getData(modelId);
+return { modelId, recordCount: records.length, records };`;
+      } else if (name === 'blogs') {
+        codeArea.value = `// 🚀 Blogs Index Fetching
+const blogsLib = new AstraBlogsLib({
+  token: "${DEFAULT_TOKEN}",
+  secret: "${DEFAULT_SECRET}"
+});
+
+const blogs = await blogsLib.getAllBlogs();
+return blogs;`;
+      } else if (name === 'content') {
+        codeArea.value = `// 🚀 Blog Post Content & Frontmatter
+const blogsLib = new AstraBlogsLib({
+  token: "${DEFAULT_TOKEN}",
+  secret: "${DEFAULT_SECRET}"
+});
+
+const blogs = await blogsLib.getAllBlogs();
+if (!blogs.length) return "No blogs found in repository";
+
+const post = await blogsLib.getBlogContent(blogs[0].slug);
+return {
+  slug: blogs[0].slug,
+  frontmatter: post.metadata,
+  markdownExcerpt: post.content.slice(0, 200) + '...'
+};`;
+      } else if (name === 'recommend') {
+        codeArea.value = `// 🚀 Personalized Blog Recommendations
+const blogsLib = new AstraBlogsLib({
+  token: "${DEFAULT_TOKEN}",
+  secret: "${DEFAULT_SECRET}"
+});
+
+const blogs = await blogsLib.getAllBlogs();
+const recommendations = blogsLib.getRecommendations(blogs, { count: 3 });
+return recommendations;`;
+      }
+
+      showToast(`Loaded ${name} preset snippet!`);
+    }
+
+    // CMS snippet triggers
+    async function runCmsSnippet(action) {
+      try {
+        const { token, secret } = getTokenSecret();
+        const cms = new AstraCmsLib({ token, secret });
+
+        cms.on('cacheHit', key => logEvent('CMS_CACHE_HIT', 'hit', `CMS cache hit: ${key}`));
+        cms.on('modelsLoaded', list => logEvent('CMS_MODELS', 'load', `Loaded ${list.length} models`));
+        cms.on('dataLoaded', d => logEvent('CMS_DATA', 'load', `Loaded ${d.records.length} records for ${d.modelId}`));
+        cms.on('error', err => logEvent('CMS_ERROR', 'error', err.message || String(err)));
+
+        setOutput(`Running CMS action: ${action}...`);
+
+        if (action === 'init') {
+          const config = cms.getConfig();
+          setOutput({ message: 'AstraCmsLib initialized', config });
+        } else if (action === 'getModels') {
+          const models = await cms.getModels();
+          setOutput(models);
+        } else if (action === 'getModel') {
+          const models = await cms.getModels();
+          if (!models.length) throw new Error('No CMS models exist in repository.');
+          const target = await cms.getModel(models[0].id);
+          setOutput(target);
+        } else if (action === 'getData') {
+          const models = await cms.getModels();
+          if (!models.length) throw new Error('No CMS models exist in repository.');
+          const records = await cms.getData(models[0].id);
+          setOutput({ modelId: models[0].id, records });
+        } else if (action === 'getRecord') {
+          const models = await cms.getModels();
+          if (!models.length) throw new Error('No CMS models exist in repository.');
+          const records = await cms.getData(models[0].id);
+          if (!records.length) throw new Error(`No records found in model "${models[0].id}"`);
+          const rec = await cms.getRecord(models[0].id, records[0].id);
+          setOutput(rec);
+        } else if (action === 'searchData') {
+          const models = await cms.getModels();
+          if (!models.length) throw new Error('No CMS models exist.');
+          const results = await cms.searchData(models[0].id, '');
+          setOutput({ modelId: models[0].id, results });
+        } else if (action === 'filterData') {
+          const models = await cms.getModels();
+          if (!models.length) throw new Error('No CMS models exist.');
+          const records = await cms.getData(models[0].id);
+          setOutput({ modelId: models[0].id, total: records.length, sample: records.slice(0, 2) });
+        } else if (action === 'clearCache') {
+          cms.clearCache('astra_cms_');
+          setOutput('AstraCmsLib cache cleared successfully!');
+          showToast('CMS Cache cleared');
+        }
+      } catch (err) {
+        setOutput(`CMS Error: ${err.message}`);
+      }
+    }
+
+    // Execution handlers preserving all legacy IDs
     async function execFullInit() {
       try {
         const lib = await getDemoLib();
@@ -366,9 +1702,7 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         const blogs = await lib.getAllBlogs();
-        if (!blogs.length) {
-          throw new Error('No blogs found. Run getAllBlogs first.');
-        }
+        if (!blogs.length) throw new Error('No blogs found in index. Run getAllBlogs first.');
         const blog = await lib.getBlogContent(blogs[0].slug);
         const output = JSON.stringify(blog, null, 2);
         setSectionOutput('output-getBlogContent', output);
@@ -384,14 +1718,9 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         const blogs = await lib.getAllBlogs();
-        if (!blogs.length) {
-          throw new Error('No blogs found. Run getAllBlogs first.');
-        }
+        if (!blogs.length) throw new Error('No blogs found.');
         const blog = await lib.getBlogContent(blogs[0].slug);
-        if (!blog) {
-          throw new Error('Blog content not found.');
-        }
-
+        if (!blog) throw new Error('Blog content not found.');
         const converted = lib.convertMarkdownToHtml(blog.rawTotal);
         const output = JSON.stringify(converted, null, 2);
         setSectionOutput('output-convertMarkdownToHtml', output);
@@ -408,7 +1737,7 @@ console.log(filteredTags);</code></pre>
         const lib = await getDemoLib();
         const version = lib.getVersion();
         setSectionOutput('output-getVersion', version);
-        setOutput(version);
+        setOutput({ version });
       } catch (error) {
         const message = `Error: ${error.message}`;
         setSectionOutput('output-getVersion', message);
@@ -423,7 +1752,7 @@ console.log(filteredTags);</code></pre>
         lib.on('cacheMiss', key => setSectionOutput('output-registerEvents', `Cache miss: ${key}`));
         lib.on('blogsLoaded', blogs => setSectionOutput('output-registerEvents', `Blogs loaded: ${blogs.length}`));
         lib.on('error', error => setSectionOutput('output-registerEvents', `Error: ${error.message || error}`));
-        const output = 'Event listeners registered. Run a fetch action to see events.';
+        const output = 'Event listeners registered. Run a fetch action to see live events.';
         setSectionOutput('output-registerEvents', output);
         setOutput(output);
       } catch (error) {
@@ -437,10 +1766,7 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         const blogs = await lib.getAllBlogs();
-        const recommendations = lib.getRecommendations(blogs, {
-          count: 5,
-          userPreferences: { react: 3, javascript: 2 }
-        });
+        const recommendations = lib.getRecommendations(blogs, { count: 5, userPreferences: { react: 3, javascript: 2 } });
         const output = JSON.stringify(recommendations, null, 2);
         setSectionOutput('output-getRecommendations', output);
         setOutput(output);
@@ -498,9 +1824,7 @@ console.log(filteredTags);</code></pre>
       try {
         const lib = await getDemoLib();
         const blogs = await lib.getAllBlogs();
-        const filtered = lib.searchBlogs(blogs, 'react', {
-          searchFields: ['title', 'description', 'tags']
-        });
+        const filtered = lib.searchBlogs(blogs, 'react', { searchFields: ['title', 'description', 'tags'] });
         const output = JSON.stringify(filtered, null, 2);
         setSectionOutput('output-searchBlogs', output);
         setOutput(output);
@@ -570,70 +1894,105 @@ console.log(filteredTags);</code></pre>
 
     async function runCustomCode() {
       try {
-        const lib = await getDemoLib();
+        const { token, secret } = getTokenSecret();
         const code = document.getElementById('customCode').value;
-        const func = new Function('lib', 'getDemoLib', 'setOutput', 'setSectionOutput', `"use strict"; return (async () => { ${code} })();`);
-        const result = await func(lib, getDemoLib, setOutput, setSectionOutput);
+        const func = new Function('token', 'secret', 'AstraCmsLib', 'AstraBlogsLib', 'setOutput', 'setSectionOutput', `"use strict"; return (async () => { ${code} })();`);
+        const result = await func(token, secret, AstraCmsLib, AstraBlogsLib, setOutput, setSectionOutput);
         const output = typeof result === 'undefined' ? 'Execution completed.' : JSON.stringify(result, null, 2);
         setSectionOutput('output-customCode', output);
         setOutput(output);
+        showToast('Code executed');
       } catch (error) {
-        const message = `Error: ${error.message}`;
+        const message = `Execution Error: ${error.message}`;
         setSectionOutput('output-customCode', message);
         setOutput(message);
       }
     }
 
     async function fetchWithTokenConfig() {
-      const token = document.getElementById('tokenInput').value.trim();
-      const secret = document.getElementById('secretInput').value.trim();
-
-      if (!token || !secret) {
-        setOutput('Please provide both token and secret values.');
-        return;
-      }
+      const { token, secret } = getTokenSecret();
 
       try {
+        setOutput('Fetching blogs from repository...');
         const lib = new AstraBlogsLib({ token, secret });
         const blogs = await lib.getAllBlogs();
-        setOutput(JSON.stringify({ token, secret, blogs }, null, 2));
+        setOutput({ success: true, count: blogs.length, blogs });
+        showToast(`Fetched ${blogs.length} blogs`);
       } catch (error) {
         setOutput(`Error: ${error.message}`);
+      }
+    }
+
+    async function fetchCmsDemo() {
+      const { token, secret } = getTokenSecret();
+
+      try {
+        setOutput('Fetching CMS models & data via AstraCmsLib...');
+        const cms = new AstraCmsLib({ token, secret });
+        const models = await cms.getModels();
+        const results = { models, sampleData: {} };
+
+        if (models.length > 0) {
+          const firstModel = models[0];
+          results.sampleData[firstModel.id] = await cms.getData(firstModel.id);
+        }
+
+        setOutput(results);
+        showToast(`Loaded ${models.length} CMS models`);
+      } catch (error) {
+        setOutput(`CMS Error: ${error.message}`);
       }
     }
 
     async function fetchWithInvalidConfig() {
       const lib = new AstraBlogsLib({});
 
-      setOutput('Fetching blogs with invalid config...');
+      setOutput('Fetching blogs with invalid config to demonstrate fallback...');
       try {
         const blogs = await lib.getAllBlogs();
-        setOutput(JSON.stringify({ blogs }, null, 2));
+        setOutput({ notice: 'Returned fallback result', blogs });
       } catch (error) {
-        setOutput(`Error: ${error.message}`);
+        setOutput(`Expected Error: ${error.message}`);
       }
     }
 
-    document.getElementById('fetchTokenConfig').addEventListener('click', fetchWithTokenConfig);
-    document.getElementById('fetchInvalid').addEventListener('click', fetchWithInvalidConfig);
-    document.getElementById('execFullInit').addEventListener('click', execFullInit);
-    document.getElementById('execGetAllBlogs').addEventListener('click', execGetAllBlogs);
-    document.getElementById('execGetAllCovers').addEventListener('click', execGetAllCovers);
-    document.getElementById('execGetCoverUrls').addEventListener('click', execGetCoverUrls);
-    document.getElementById('execGetBlogContent').addEventListener('click', execGetBlogContent);
-    document.getElementById('execConvertMarkdownToHtml').addEventListener('click', execConvertMarkdownToHtml);
-    document.getElementById('execGetVersion').addEventListener('click', execGetVersion);
-    document.getElementById('execRegisterEvents').addEventListener('click', execRegisterEvents);
-    document.getElementById('execGetRecommendations').addEventListener('click', execGetRecommendations);
-    document.getElementById('execTrackReadBlog').addEventListener('click', execTrackReadBlog);
-    document.getElementById('execGetUserPreferences').addEventListener('click', execGetUserPreferences);
-    document.getElementById('execClearUserPreferences').addEventListener('click', execClearUserPreferences);
-    document.getElementById('execSearchBlogs').addEventListener('click', execSearchBlogs);
-    document.getElementById('execFilterByTags').addEventListener('click', execFilterByTags);
-    document.getElementById('execGetConfig').addEventListener('click', execGetConfig);
-    document.getElementById('execSetConfig').addEventListener('click', execSetConfig);
-    document.getElementById('execClearCache').addEventListener('click', execClearCache);
-    document.getElementById('runCustomCode').addEventListener('click', runCustomCode);
+    // Keyboard shortcut for custom code runner (Ctrl + Enter)
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        runCustomCode();
+      }
+    });
+
+    // Wire up event listeners
+    document.getElementById('fetchTokenConfig')?.addEventListener('click', fetchWithTokenConfig);
+    document.getElementById('fetchCmsDemo')?.addEventListener('click', fetchCmsDemo);
+    document.getElementById('fetchInvalid')?.addEventListener('click', fetchWithInvalidConfig);
+    document.getElementById('execFullInit')?.addEventListener('click', execFullInit);
+    document.getElementById('execGetAllBlogs')?.addEventListener('click', execGetAllBlogs);
+    document.getElementById('execGetAllCovers')?.addEventListener('click', execGetAllCovers);
+    document.getElementById('execGetCoverUrls')?.addEventListener('click', execGetCoverUrls);
+    document.getElementById('execGetBlogContent')?.addEventListener('click', execGetBlogContent);
+    document.getElementById('execConvertMarkdownToHtml')?.addEventListener('click', execConvertMarkdownToHtml);
+    document.getElementById('execGetVersion')?.addEventListener('click', execGetVersion);
+    document.getElementById('execRegisterEvents')?.addEventListener('click', execRegisterEvents);
+    document.getElementById('execGetRecommendations')?.addEventListener('click', execGetRecommendations);
+    document.getElementById('execTrackReadBlog')?.addEventListener('click', execTrackReadBlog);
+    document.getElementById('execGetUserPreferences')?.addEventListener('click', execGetUserPreferences);
+    document.getElementById('execClearUserPreferences')?.addEventListener('click', execClearUserPreferences);
+    document.getElementById('execSearchBlogs')?.addEventListener('click', execSearchBlogs);
+    document.getElementById('execFilterByTags')?.addEventListener('click', execFilterByTags);
+    document.getElementById('execGetConfig')?.addEventListener('click', execGetConfig);
+    document.getElementById('execSetConfig')?.addEventListener('click', execSetConfig);
+    document.getElementById('execClearCache')?.addEventListener('click', execClearCache);
+    document.getElementById('runCustomCode')?.addEventListener('click', runCustomCode);
+
+    // Read Version from AstraBlogsLib
+    if (typeof AstraBlogsLib !== 'undefined') {
+      const pill = document.getElementById('versionPill');
+      if (pill && AstraBlogsLib.VERSION && AstraBlogsLib.VERSION !== '_VERSION_') {
+        pill.textContent = `v${AstraBlogsLib.VERSION}`;
+      }
+    }
   </script>
 </body>
 </html>

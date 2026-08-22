@@ -1,20 +1,33 @@
 # astra-libs
 
-A standalone JavaScript library for fetching, caching, searching, and rendering blog content stored in repository metadata.
+A standalone JavaScript library for fetching, caching, searching, and managing Git-backed **Blogs** & **Headless CMS** content.
 
-> Framework-agnostic, browser-friendly, and compatible with CommonJS/ES modules.
+> Framework-agnostic, browser-friendly, and fully compatible with CommonJS/ES modules, Next.js, React, Vue, Angular, and Node.js.
 
 ## Features
 
-- Fetch blog index metadata from a repository index
+### 📝 Blogs Library (`AstraBlogsLib`)
+- Fetch blog index metadata from a repository index (`index.json`)
 - Load individual markdown blog content with YAML frontmatter parsing
-- Convert markdown to HTML with built-in default styling
-- Search and filter blogs by title, description, tags, or custom fields
+- Convert markdown to HTML with built-in styling
+- Search and filter blogs by title, description, tags, custom fields, and publication status
 - Personalized recommendations using reading history and tag weights
-- Local cache support with configurable time-to-live (TTL)
-- Version API for SDK tracing
-- Event system for cache, fetch, and error notifications
-- Supports script tag, ES module import, and CommonJS usage
+- Granular publication status filtering (`published`, `draft`, `in-review`)
+
+### 📦 Headless CMS Library (`AstraCmsLib`)
+- Manage and fetch custom data models and schemas (`cms/models.json`)
+- Retrieve and query model records (`cms/data/{modelId}.json`)
+- Search records across full text or targeted custom fields
+- Filter records with object criteria or custom predicate functions
+- Fetch individual records by unique ID
+
+### ⚡ Performance & Developer Experience
+- Dual-tier caching with configurable TTL and automatic offline fallback
+- Lifecycle event hooks for cache hits, network requests, and errors
+- Zero dependencies for core operation (optional lightweight YAML parsing)
+- Full TypeScript type definitions included
+
+---
 
 ## Installation
 
@@ -23,7 +36,9 @@ A standalone JavaScript library for fetching, caching, searching, and rendering 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/astra-blogs-lib@latest/astra-blogs-lib.min.js"></script>
 <script>
-  const blogsLib = new AstraBlogsLib();
+  // Access Blogs or CMS library
+  const blogsLib = new AstraBlogsLib({ token: '...', secret: '...' });
+  const cmsLib = new AstraBlogsLib.CMS({ token: '...', secret: '...' });
 </script>
 ```
 
@@ -32,25 +47,35 @@ A standalone JavaScript library for fetching, caching, searching, and rendering 
 ```html
 <script src="./astra-blogs-lib.js"></script>
 <script>
-  const blogsLib = new AstraBlogsLib();
+  const blogsLib = new AstraBlogsLib({ token: '...', secret: '...' });
+  const cmsLib = new AstraBlogsLib.CMS({ token: '...', secret: '...' });
 </script>
 ```
 
-### ES module import
+### ES Module Import
 
 ```js
-import AstraBlogsLib from './astra-blogs-lib.js';
-const blogsLib = new AstraBlogsLib();
+import AstraBlogsLib, { AstraCmsLib } from 'astra-blogs-lib';
+
+const blogsLib = new AstraBlogsLib({ token, secret });
+const cmsLib = new AstraCmsLib({ token, secret });
 ```
 
-### CommonJS import
+### CommonJS Import
 
 ```js
-const AstraBlogsLib = require('./astra-blogs-lib.js');
-const blogsLib = new AstraBlogsLib();
+const AstraBlogsLib = require('astra-blogs-lib');
+const { AstraCmsLib } = AstraBlogsLib;
+
+const blogsLib = new AstraBlogsLib({ token, secret });
+const cmsLib = new AstraCmsLib({ token, secret });
 ```
+
+---
 
 ## Quick Start
+
+### 1. Blog Management (`AstraBlogsLib`)
 
 ```js
 const blogsLib = new AstraBlogsLib({
@@ -59,36 +84,61 @@ const blogsLib = new AstraBlogsLib({
 });
 
 blogsLib.setConfig({
-  indexCacheTTL: 3600000,
-  contentCacheTTL: 86400000,
+  indexCacheTTL: 3600000, // 1 hour
+  contentCacheTTL: 86400000, // 24 hours
   useCache: true
 });
 
+// Fetch all published blogs
 const blogs = await blogsLib.getAllBlogs();
-console.log('blogs', blogs);
+console.log('Blogs:', blogs);
 
+// Fetch a single blog markdown content
 const blog = await blogsLib.getBlogContent(blogs[0].slug);
-console.log('content metadata', blog.metadata);
-console.log('markdown body', blog.content);
+console.log('Metadata:', blog.metadata);
+console.log('Markdown body:', blog.content);
 ```
 
-> Note: `AstraBlogsLib` expects decryption-based initialization using `token` and `secret`.
+### 2. Headless CMS (`AstraCmsLib`)
+
+```js
+const cmsLib = new AstraCmsLib({
+  token: 'encrypted-token',
+  secret: 'decryption-secret'
+});
+
+// Fetch all schemas/models
+const models = await cmsLib.getModels();
+console.log('CMS Models:', models);
+
+// Fetch all records for a model
+const teamMembers = await cmsLib.getData('team_members');
+
+// Search records
+const engineers = await cmsLib.searchData('team_members', 'Software Engineer');
+```
+
+> **Note**: Initialization expects encrypted-token parameters using `token` and `secret`. Non-sensitive runtime settings like cache control can be modified using `.setConfig()`.
+
+---
 
 ## Repository Layout
 
-The repository used by this library should contain:
+The repository managed by this library stores both blogs and CMS structured data:
 
 ```
-index.json
-blogs/
-  post-one.md
-  post-two.md
-  ...
+├── index.json               # Blogs metadata index
+├── blogs/                   # Markdown blog posts
+│   ├── post-one.md
+│   └── post-two.md
+└── cms/                     # Headless CMS directory
+    ├── models.json          # Schema definitions for all models
+    └── data/                # Data records per model
+        ├── team_members.json
+        └── testimonials.json
 ```
 
-### `index.json`
-
-This file should contain an array of blog metadata objects:
+### `index.json` (Blogs Index)
 
 ```json
 [
@@ -99,8 +149,45 @@ This file should contain an array of blog metadata objects:
     "tags": ["react", "javascript"],
     "author": "John Doe",
     "date": "2024-01-01",
+    "status": "published",
     "cover": "https://example.com/cover.jpg",
     "readTime": 5
+  }
+]
+```
+
+### `cms/models.json` (CMS Schema Models)
+
+```json
+[
+  {
+    "id": "team_members",
+    "name": "Team Members",
+    "description": "Directory of company staff",
+    "icon": "FiUsers",
+    "fields": [
+      { "name": "name", "label": "Full Name", "type": "text", "required": true },
+      { "name": "role", "label": "Job Role", "type": "text", "required": true },
+      { "name": "department", "label": "Department", "type": "select", "options": ["Engineering", "Design", "Marketing"] },
+      { "name": "bio", "label": "Biography", "type": "rich_text" },
+      { "name": "isActive", "label": "Active Status", "type": "boolean" }
+    ]
+  }
+]
+```
+
+### `cms/data/{modelId}.json` (CMS Records)
+
+```json
+[
+  {
+    "id": "rec_01",
+    "name": "Sarah Connor",
+    "role": "Lead Architect",
+    "department": "Engineering",
+    "bio": "<p>Experienced cloud architect.</p>",
+    "isActive": true,
+    "createdAt": "2026-01-10T12:00:00Z"
   }
 ]
 ```

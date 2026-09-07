@@ -1086,7 +1086,12 @@
                 <button type="button" class="preset-pill" data-preset="cms-records"
                   onclick="loadPreset('cms-records', this)">
                   <span class="preset-icon">📑</span>
-                  <span>CMS Records</span>
+                  <span>CMS Collection</span>
+                </button>
+                <button type="button" class="preset-pill" data-preset="cms-single"
+                  onclick="loadPreset('cms-single', this)">
+                  <span class="preset-icon">📄</span>
+                  <span>CMS Single Doc</span>
                 </button>
                 <button type="button" class="preset-pill" data-preset="blogs" onclick="loadPreset('blogs', this)">
                   <span class="preset-icon">📚</span>
@@ -1389,20 +1394,33 @@ return {
             <span class="api-name">cms.getData(modelId, options?)</span>
             <span class="api-method-tag tag-get">RECORDS</span>
           </div>
-          <p class="api-desc">Fetch all data records for a specific model from <code>cms/data/{modelId}.json</code>.</p>
-          <div class="api-code-snippet">const records = await cms.getData('team_members');</div>
+          <p class="api-desc">Fetch all data records or single document from <code>cms/data/{modelId}.json</code>.</p>
+          <div class="api-code-snippet">const data = await cms.getData('team_members');</div>
           <div class="api-card-footer">
             <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('getData')">Run getData()</button>
+          </div>
+        </div>
+
+        <!-- CMS getDocument -->
+        <div class="api-card">
+          <div class="api-card-header">
+            <span class="api-name">cms.getDocument(modelId)</span>
+            <span class="api-method-tag tag-get">SINGLE DOC</span>
+          </div>
+          <p class="api-desc">Fetch a single-document CMS object (e.g. Privacy Policy, Cookie Policy).</p>
+          <div class="api-code-snippet">const doc = await cms.getDocument('privacy-policy');</div>
+          <div class="api-card-footer">
+            <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('getDocument')">Run getDocument()</button>
           </div>
         </div>
 
         <!-- CMS getRecord -->
         <div class="api-card">
           <div class="api-card-header">
-            <span class="api-name">cms.getRecord(modelId, recordId)</span>
-            <span class="api-method-tag tag-get">SINGLE</span>
+            <span class="api-name">cms.getRecord(modelId, recordId?)</span>
+            <span class="api-method-tag tag-get">RECORD</span>
           </div>
-          <p class="api-desc">Retrieve a single CMS data record by its unique record identifier.</p>
+          <p class="api-desc">Retrieve a single CMS data record by its unique identifier.</p>
           <div class="api-code-snippet">const rec = await cms.getRecord('team_members', 'rec_123');</div>
           <div class="api-card-footer">
             <button class="btn btn-cms btn-sm" onclick="runCmsSnippet('getRecord')">Run getRecord()</button>
@@ -1654,18 +1672,35 @@ const cms = new AstraCmsLib({
 const models = await cms.getModels();
 return models;`;
       } else if (name === 'cms-records') {
-        codeArea.value = `// 🚀 Headless CMS Records Fetching
+        codeArea.value = `// 🚀 Headless CMS Collection Records Fetching
 const cms = new AstraCmsLib({
   token: "${DEFAULT_TOKEN}",
   secret: "${DEFAULT_SECRET}"
 });
 
-const models = await cms.getModels();
-if (!models.length) return "No CMS models found. Create one in blog-builder!";
+const models = await cms.getCollectionModels();
+if (!models.length) return "No CMS collection models found. Create one in blog-builder!";
 
 const modelId = models[0].id;
 const records = await cms.getData(modelId);
-return { modelId, recordCount: records.length, records };`;
+return { modelId, recordCount: Array.isArray(records) ? records.length : 1, records };`;
+      } else if (name === 'cms-single') {
+        codeArea.value = `// 🚀 Headless CMS Single Document (Privacy Policy / Cookie Policy / Site Settings)
+const cms = new AstraCmsLib({
+  token: "${DEFAULT_TOKEN}",
+  secret: "${DEFAULT_SECRET}"
+});
+
+const singleModels = await cms.getSingleModels();
+if (!singleModels.length) {
+  // If no explicit single models defined, attempt to fetch cookie-policy or privacy-policy
+  const doc = await cms.getDocument('cookie-policy');
+  return doc || "No Single Type documents found in repository.";
+}
+
+const modelId = singleModels[0].id;
+const document = await cms.getDocument(modelId);
+return { modelId, document };`;
       } else if (name === 'blogs') {
         codeArea.value = `// 🚀 Blogs Index Fetching
 const blogsLib = new AstraBlogsLib({
@@ -1714,7 +1749,7 @@ return recommendations;`;
 
         cms.on('cacheHit', key => logEvent('CMS_CACHE_HIT', 'hit', `CMS cache hit: ${key}`));
         cms.on('modelsLoaded', list => logEvent('CMS_MODELS', 'load', `Loaded ${list.length} models`));
-        cms.on('dataLoaded', d => logEvent('CMS_DATA', 'load', `Loaded ${d.records.length} records for ${d.modelId}`));
+        cms.on('dataLoaded', d => logEvent('CMS_DATA', 'load', Array.isArray(d.records) ? `Loaded ${d.records.length} records for ${d.modelId}` : `Loaded single doc for ${d.modelId}`));
         cms.on('error', err => logEvent('CMS_ERROR', 'error', err.message || String(err)));
 
         setOutput(`Running CMS action: ${action}...`);
@@ -1733,15 +1768,27 @@ return recommendations;`;
         } else if (action === 'getData') {
           const models = await cms.getModels();
           if (!models.length) throw new Error('No CMS models exist in repository.');
-          const records = await cms.getData(models[0].id);
-          setOutput({ modelId: models[0].id, records });
+          const data = await cms.getData(models[0].id);
+          setOutput({ modelId: models[0].id, data });
+        } else if (action === 'getDocument') {
+          const singleModels = await cms.getSingleModels();
+          const targetId = singleModels.length > 0 ? singleModels[0].id : 'cookie-policy';
+          const doc = await cms.getDocument(targetId);
+          if (!doc) throw new Error(`Single document for "${targetId}" not found.`);
+          setOutput({ modelId: targetId, document: doc });
         } else if (action === 'getRecord') {
           const models = await cms.getModels();
           if (!models.length) throw new Error('No CMS models exist in repository.');
           const records = await cms.getData(models[0].id);
-          if (!records.length) throw new Error(`No records found in model "${models[0].id}"`);
-          const rec = await cms.getRecord(models[0].id, records[0].id);
-          setOutput(rec);
+          if (!records) throw new Error(`No data found in model "${models[0].id}"`);
+          if (Array.isArray(records)) {
+            if (!records.length) throw new Error(`No records found in model "${models[0].id}"`);
+            const rec = await cms.getRecord(models[0].id, records[0].id);
+            setOutput(rec);
+          } else {
+            const rec = await cms.getRecord(models[0].id);
+            setOutput(rec);
+          }
         } else if (action === 'searchData') {
           const models = await cms.getModels();
           if (!models.length) throw new Error('No CMS models exist.');
@@ -1751,7 +1798,11 @@ return recommendations;`;
           const models = await cms.getModels();
           if (!models.length) throw new Error('No CMS models exist.');
           const records = await cms.getData(models[0].id);
-          setOutput({ modelId: models[0].id, total: records.length, sample: records.slice(0, 2) });
+          if (Array.isArray(records)) {
+            setOutput({ modelId: models[0].id, total: records.length, sample: records.slice(0, 2) });
+          } else {
+            setOutput({ modelId: models[0].id, document: records });
+          }
         } else if (action === 'clearCache') {
           cms.clearCache('astra_cms_');
           setOutput('AstraCmsLib cache cleared successfully!');

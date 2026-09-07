@@ -503,21 +503,31 @@ const cmsLib = new AstraCmsLib({
 const models = await cmsLib.getModels();
 console.log('Available Models:', models);
 
+// Filter models by type
+const singleModels = await cmsLib.getSingleModels(); // e.g. Privacy Policy, Cookie Policy
+const collectionModels = await cmsLib.getCollectionModels(); // e.g. Team Members, FAQs
+
 // 2. Get a single model schema by ID
 const teamModel = await cmsLib.getModel('team_members');
 
-// 3. Fetch all records for a model
+// 3. Fetch Single Type Document (e.g. Privacy Policy, Cookie Policy, Terms)
+const privacyDoc = await cmsLib.getDocument('privacy-policy');
+// Or alias: await cmsLib.getSingle('privacy-policy');
+console.log('Document Title:', privacyDoc.title);
+console.log('Markdown Content:', privacyDoc.content);
+
+// 4. Fetch Collection Records (returns Array)
 const teamMembers = await cmsLib.getData('team_members');
 
-// 4. Get a specific record by ID
+// 5. Get a specific record by ID
 const member = await cmsLib.getRecord('team_members', 'rec_123');
 
-// 5. Search records with a query text
+// 6. Search records or single document with query text
 const engineers = await cmsLib.searchData('team_members', 'Engineer', {
   searchFields: ['role', 'bio']
 });
 
-// 6. Filter records with criteria object or predicate function
+// 7. Filter records with criteria object or predicate function
 const activeMembers = await cmsLib.filterData('team_members', { isActive: true });
 const experienced = await cmsLib.filterData('team_members', r => r.experienceYears >= 5);
 ```

@@ -301,6 +301,7 @@ async function runTests() {
     {
       id: 'team_members',
       name: 'Team Members',
+      modelType: 'collection',
       description: 'Directory of company team members',
       icon: 'FiUsers',
       fields: [
@@ -317,12 +318,37 @@ async function runTests() {
     {
       id: 'testimonials',
       name: 'Customer Testimonials',
+      modelType: 'collection',
       description: 'Client reviews and testimonials',
       icon: 'FiMessageSquare',
       fields: [
         { name: 'clientName', label: 'Client Name', type: 'text', required: true },
         { name: 'quote', label: 'Quote', type: 'textarea', required: true },
         { name: 'rating', label: 'Rating', type: 'number' }
+      ]
+    },
+    {
+      id: 'privacy_policy',
+      name: 'Privacy Policy',
+      modelType: 'single',
+      description: 'Single document privacy policy agreement',
+      icon: 'FiShield',
+      fields: [
+        { name: 'title', label: 'Document Title', type: 'text', required: true },
+        { name: 'content', label: 'Policy Content', type: 'rich_text', required: true },
+        { name: 'lastUpdated', label: 'Last Updated', type: 'date' },
+        { name: 'contactEmail', label: 'Contact Email', type: 'email' }
+      ]
+    },
+    {
+      id: 'cookie_policy',
+      name: 'Cookie Policy',
+      modelType: 'single',
+      description: 'Single document cookie policy banner & details',
+      icon: 'FiLayers',
+      fields: [
+        { name: 'title', label: 'Title', type: 'text', required: true },
+        { name: 'bannerText', label: 'Banner Text', type: 'textarea' }
       ]
     }
   ];
@@ -360,6 +386,16 @@ async function runTests() {
     }
   ];
 
+  const mockPrivacyDoc = {
+    id: 'privacy_policy',
+    title: 'Global Privacy Policy',
+    content: '## Privacy Policy\nWe value your privacy and safeguard your personal information.',
+    lastUpdated: '2026-09-01',
+    contactEmail: 'privacy@example.com',
+    _status: 'published',
+    _updatedAt: '2026-09-01T12:00:00.000Z'
+  };
+
   // CMS Test 1: getModels() and getModel()
   {
     console.log('\nCMS Test 1: getModels() & getModel() caching and lookup');
@@ -380,7 +416,7 @@ async function runTests() {
     cms.on('modelsLoaded', (models) => { modelsLoadedFired = true; });
 
     const models = await cms.getModels();
-    assert.strictEqual(models.length, 2, 'Should return 2 CMS models from cache');
+    assert.strictEqual(models.length, 4, 'Should return 4 CMS models from cache');
     assert.ok(cacheHitFired, 'Should fire cacheHit event');
     assert.ok(modelsLoadedFired, 'Should fire modelsLoaded event');
 
@@ -392,6 +428,20 @@ async function runTests() {
     const testimonialModel = await cms.getModel('Customer Testimonials');
     assert.notStrictEqual(testimonialModel, null, 'Should find model by name');
     assert.strictEqual(testimonialModel.id, 'testimonials');
+
+    const privacyModel = await cms.getModel('privacy_policy');
+    assert.notStrictEqual(privacyModel, null, 'Should find single type model');
+    assert.strictEqual(privacyModel.modelType, 'single');
+
+    // Test getSingleModels() and getCollectionModels()
+    const singleModels = await cms.getSingleModels();
+    assert.strictEqual(singleModels.length, 2, 'Should return 2 single-document models');
+    assert.ok(singleModels.some(m => m.id === 'privacy_policy'));
+    assert.ok(singleModels.some(m => m.id === 'cookie_policy'));
+
+    const collectionModels = await cms.getCollectionModels();
+    assert.strictEqual(collectionModels.length, 2, 'Should return 2 collection models');
+    assert.ok(collectionModels.some(m => m.id === 'team_members'));
 
     const missingModel = await cms.getModel('non_existent');
     assert.strictEqual(missingModel, null, 'Should return null for missing model');
@@ -425,9 +475,59 @@ async function runTests() {
     console.log('✅ CMS Test 2 passed');
   }
 
-  // CMS Test 3: searchData()
+  // CMS Test 3: Single Type CMS Documents (getData, getDocument, getSingle, getRecord)
   {
-    console.log('\nCMS Test 3: searchData() querying');
+    console.log('\nCMS Test 3: Single Type Document (getData, getDocument, getSingle)');
+    const storage = createMockStorage();
+    storage.setItem('astra_cms_data_privacy_policy', JSON.stringify({
+      data: mockPrivacyDoc,
+      timestamp: Date.now()
+    }));
+
+    const cms = new AstraCmsLib({ storage, useCache: true });
+    cms.config.owner = 'test-owner';
+    cms.config.repo = 'test-repo';
+    cms.config.branch = 'main';
+
+    // getData returns single document object directly
+    const privacyData = await cms.getData('privacy_policy');
+    assert.ok(privacyData && typeof privacyData === 'object', 'getData should return object for single type');
+    assert.strictEqual(privacyData.title, 'Global Privacy Policy');
+    assert.strictEqual(privacyData.contactEmail, 'privacy@example.com');
+
+    // getDocument returns the document object
+    const privacyDoc = await cms.getDocument('privacy_policy');
+    assert.notStrictEqual(privacyDoc, null, 'getDocument should return privacy document');
+    assert.strictEqual(privacyDoc.title, 'Global Privacy Policy');
+
+    // getSingle alias returns the document object
+    const privacySingle = await cms.getSingle('privacy_policy');
+    assert.notStrictEqual(privacySingle, null, 'getSingle should return privacy document');
+    assert.strictEqual(privacySingle.contactEmail, 'privacy@example.com');
+
+    // getRecord with or without recordId
+    const recordDoc = await cms.getRecord('privacy_policy');
+    assert.notStrictEqual(recordDoc, null, 'getRecord without recordId returns single document');
+    assert.strictEqual(recordDoc.title, 'Global Privacy Policy');
+
+    const recordById = await cms.getRecord('privacy_policy', 'privacy_policy');
+    assert.notStrictEqual(recordById, null, 'getRecord with matching recordId returns single document');
+
+    // searchData on single type document
+    const privacySearch = await cms.searchData('privacy_policy', 'safeguard');
+    assert.strictEqual(privacySearch.length, 1, 'Should find match in single document');
+    assert.strictEqual(privacySearch[0].title, 'Global Privacy Policy');
+
+    // filterData on single type document
+    const privacyFilter = await cms.filterData('privacy_policy', { contactEmail: 'privacy@example.com' });
+    assert.strictEqual(privacyFilter.length, 1, 'Should filter single document');
+
+    console.log('✅ CMS Test 3 passed');
+  }
+
+  // CMS Test 4: searchData() querying
+  {
+    console.log('\nCMS Test 4: searchData() querying');
     const storage = createMockStorage();
     storage.setItem('astra_cms_data_team_members', JSON.stringify({
       data: mockTeamRecords,
@@ -454,12 +554,12 @@ async function runTests() {
     assert.strictEqual(bioSearch.length, 1);
     assert.strictEqual(bioSearch[0].id, 'rec_carol');
 
-    console.log('✅ CMS Test 3 passed');
+    console.log('✅ CMS Test 4 passed');
   }
 
-  // CMS Test 4: filterData() with predicate and object criteria
+  // CMS Test 5: filterData() with predicate and object criteria
   {
-    console.log('\nCMS Test 4: filterData() with predicate and object criteria');
+    console.log('\nCMS Test 5: filterData() with predicate and object criteria');
     const storage = createMockStorage();
     storage.setItem('astra_cms_data_team_members', JSON.stringify({
       data: mockTeamRecords,
@@ -484,15 +584,16 @@ async function runTests() {
     assert.ok(seniorMembers.some(r => r.id === 'rec_alice'));
     assert.ok(seniorMembers.some(r => r.id === 'rec_carol'));
 
-    console.log('✅ CMS Test 4 passed');
+    console.log('✅ CMS Test 5 passed');
   }
 
-  // CMS Test 5: clearCache()
+  // CMS Test 6: clearCache()
   {
-    console.log('\nCMS Test 5: clearCache() cache eviction');
+    console.log('\nCMS Test 6: clearCache() cache eviction');
     const storage = createMockStorage();
     storage.setItem('astra_cms_models_cache', JSON.stringify({ data: mockCmsModels, timestamp: Date.now() }));
     storage.setItem('astra_cms_data_team_members', JSON.stringify({ data: mockTeamRecords, timestamp: Date.now() }));
+    storage.setItem('astra_cms_data_privacy_policy', JSON.stringify({ data: mockPrivacyDoc, timestamp: Date.now() }));
     storage.setItem('astra_blogs_index_cache', JSON.stringify({ data: [], timestamp: Date.now() }));
 
     const cms = new AstraCmsLib({ storage, useCache: true });
@@ -500,9 +601,10 @@ async function runTests() {
 
     assert.strictEqual(storage.getItem('astra_cms_models_cache'), null, 'CMS models cache should be cleared');
     assert.strictEqual(storage.getItem('astra_cms_data_team_members'), null, 'CMS data cache should be cleared');
+    assert.strictEqual(storage.getItem('astra_cms_data_privacy_policy'), null, 'CMS single doc cache should be cleared');
     assert.notStrictEqual(storage.getItem('astra_blogs_index_cache'), null, 'Blog cache should be preserved');
 
-    console.log('✅ CMS Test 5 passed');
+    console.log('✅ CMS Test 6 passed');
   }
 
   console.log('\n🎉 All AstraBlogsLib and AstraCmsLib tests passed successfully!');

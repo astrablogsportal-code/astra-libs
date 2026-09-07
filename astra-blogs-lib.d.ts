@@ -604,13 +604,21 @@ export interface CmsField {
 }
 
 /**
+ * Supported CMS Model Architecture Types
+ */
+export type CmsModelType = 'collection' | 'single';
+
+/**
  * CMS Model Template Definition
  */
 export interface CmsModel {
   id: string;
   name: string;
+  label?: string;
   description?: string;
   icon?: string;
+  category?: string;
+  modelType?: CmsModelType;
   fields: CmsField[];
   createdAt?: string;
   updatedAt?: string;
@@ -764,9 +772,25 @@ declare class AstraCmsLib {
   getModels(options?: CmsFetchOptions): Promise<CmsModel[]>;
 
   /**
+   * Get all single-document CMS models
+   * 
+   * @param options - Fetch options
+   * @returns Promise resolving to single document model schemas
+   */
+  getSingleModels(options?: CmsFetchOptions): Promise<CmsModel[]>;
+
+  /**
+   * Get all collection-based CMS models
+   * 
+   * @param options - Fetch options
+   * @returns Promise resolving to collection model schemas
+   */
+  getCollectionModels(options?: CmsFetchOptions): Promise<CmsModel[]>;
+
+  /**
    * Get a specific CMS model schema by its ID or Name
    * 
-   * @param modelId - Model ID (e.g. 'team_members') or Name
+   * @param modelId - Model ID (e.g. 'team_members', 'privacy_policy') or Name
    * @param options - Fetch options
    * @returns Promise resolving to Model definition or null if not found
    * 
@@ -776,32 +800,57 @@ declare class AstraCmsLib {
   getModel(modelId: string, options?: CmsFetchOptions): Promise<CmsModel | null>;
 
   /**
-   * Fetch all data records for a specific CMS model
+   * Fetch data records (collection) or single document (single-type) for a specific CMS model
    * 
-   * @param modelId - Model ID (e.g. 'team_members', 'features', 'pricing_plans')
+   * @param modelId - Model ID (e.g. 'team_members', 'privacy_policy', 'features')
    * @param options - Fetch options
-   * @returns Promise resolving to array of data records
+   * @returns Promise resolving to array of records (for collections) or document object (for single types)
    * 
    * @example
-   * const team = await cmsLib.getData('team_members');
+   * const team = await cmsLib.getData('team_members'); // Collection array
+   * const privacy = await cmsLib.getData('privacy_policy'); // Single document object
    */
-  getData<T = CmsRecord>(modelId: string, options?: CmsFetchOptions): Promise<T[]>;
+  getData<T = any>(modelId: string, options?: CmsFetchOptions): Promise<T>;
 
   /**
-   * Fetch a single CMS record by its record ID
+   * Fetch a single type CMS document from GitHub
+   * 
+   * @param modelId - Model ID (e.g. 'privacy_policy', 'cookie_policy', 'terms')
+   * @param options - Fetch options
+   * @returns Promise resolving to Document object or null if not found
+   * 
+   * @example
+   * const privacyDoc = await cmsLib.getDocument('privacy_policy');
+   */
+  getDocument<T = CmsRecord>(modelId: string, options?: CmsFetchOptions): Promise<T | null>;
+
+  /**
+   * Alias for getDocument - fetch a single type CMS document from GitHub
    * 
    * @param modelId - Model ID
-   * @param recordId - Record ID (e.g. 'rec_abc123')
+   * @param options - Fetch options
+   * @returns Promise resolving to Document object or null if not found
+   * 
+   * @example
+   * const settings = await cmsLib.getSingle('site_settings');
+   */
+  getSingle<T = CmsRecord>(modelId: string, options?: CmsFetchOptions): Promise<T | null>;
+
+  /**
+   * Fetch a single CMS record by its record ID (or single document if model is single-type)
+   * 
+   * @param modelId - Model ID
+   * @param recordId - Record ID (e.g. 'rec_abc123'). Optional for single-type models.
    * @param options - Fetch options
    * @returns Promise resolving to Record object or null if not found
    * 
    * @example
    * const member = await cmsLib.getRecord('team_members', 'rec_123');
    */
-  getRecord<T = CmsRecord>(modelId: string, recordId: string, options?: CmsFetchOptions): Promise<T | null>;
+  getRecord<T = CmsRecord>(modelId: string, recordId?: string, options?: CmsFetchOptions): Promise<T | null>;
 
   /**
-   * Search records of a model by query text
+   * Search records of a model by query text (supports both collections and single documents)
    * 
    * @param modelId - Model ID
    * @param query - Search query string

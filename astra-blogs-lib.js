@@ -1400,21 +1400,41 @@ class AstraCmsLib {
   }
 
   /**
-   * Fetch all data records for a specific CMS model from GitHub
-   * @param {string} modelId - Model ID (e.g. 'team_members', 'testimonials')
+   * Get all single-document CMS models
+   * @param {Object} [options={}] - Fetch options
+   * @returns {Promise<Array<Object>>} Single document model schemas
+   */
+  async getSingleModels(options = {}) {
+    const models = await this.getModels(options);
+    return models.filter(m => m.modelType === 'single');
+  }
+
+  /**
+   * Get all collection-based CMS models
+   * @param {Object} [options={}] - Fetch options
+   * @returns {Promise<Array<Object>>} Collection model schemas
+   */
+  async getCollectionModels(options = {}) {
+    const models = await this.getModels(options);
+    return models.filter(m => m.modelType !== 'single');
+  }
+
+  /**
+   * Fetch data records (collection) or single document (single-type) for a specific CMS model from GitHub
+   * @param {string} modelId - Model ID (e.g. 'team_members', 'privacy_policy')
    * @param {Object} [options={}] - Fetch options
    * @param {boolean} [options.useCache=true] - Use cached data if available
    * @param {boolean} [options.forceFresh=false] - Skip cache and fetch fresh data
-   * @returns {Promise<Array<Object>>} Array of data record objects
+   * @returns {Promise<Array<Object>|Object|null>} Array of data records for collection types, or document object for single types
    */
   async getData(modelId, options = {}) {
-    if (!modelId) return [];
+    if (!modelId) return null;
     await this._applyDecryptedConfig();
 
     const missingKeys = this._getMissingConfigKeys();
     if (missingKeys.length) {
       console.error(`Invalid configuration key(s): ${missingKeys.join(', ')}`);
-      return [];
+      return null;
     }
 
     const { useCache = true, forceFresh = false } = options;
@@ -1422,10 +1442,11 @@ class AstraCmsLib {
 
     if (useCache && !forceFresh) {
       const cached = this._getFromStorage(cacheKey, this.config.dataCacheTTL);
-      if (cached) {
-        console.log(`📑 Returning CMS records for model "${modelId}" from cache`);
+      if (cached !== null && cached !== undefined) {
+        const isArr = Array.isArray(cached);
+        console.log(`📑 Returning CMS ${isArr ? `${cached.length} records` : 'document'} for model "${modelId}" from cache`);
         this.emit('cacheHit', cacheKey);
-        this.emit('dataLoaded', { modelId, records: cached });
+        this.emit('dataLoaded', { modelId, records: cached, data: cached, isSingle: !isArr });
         return cached;
       }
       this.emit('cacheMiss', cacheKey);
@@ -1439,46 +1460,87 @@ class AstraCmsLib {
       if (!response.ok) {
         if (response.status === 404) {
           console.warn(`❌ CMS data for model "${modelId}" not found (404)`);
-          return [];
+          return null;
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      const recordsList = Array.isArray(data) ? data : [];
+      const payload = (data !== null && typeof data === 'object') ? data : (Array.isArray(data) ? data : null);
 
-      this._saveToStorage(cacheKey, recordsList);
-      console.log(`📑 Fetched ${recordsList.length} records for model "${modelId}" from repository`);
-      this.emit('dataLoaded', { modelId, records: recordsList });
-      return recordsList;
+      this._saveToStorage(cacheKey, payload);
+      const isArr = Array.isArray(payload);
+      console.log(`📑 Fetched ${isArr ? `${payload.length} records` : 'single document'} for model "${modelId}" from repository`);
+      this.emit('dataLoaded', { modelId, records: payload, data: payload, isSingle: !isArr });
+      return payload;
     } catch (error) {
       console.error(`❌ Failed to fetch CMS data for model "${modelId}":`, error);
       this.emit('error', error);
 
       const expired = this._getFromStorage(cacheKey);
-      if (expired) {
+      if (expired !== null && expired !== undefined) {
         console.log(`⚠️ Returning expired cached CMS data for "${modelId}" due to fetch error`);
-        return Array.isArray(expired) ? expired : [];
+        return expired;
       }
-      return [];
+      return null;
     }
   }
 
   /**
-   * Fetch a single CMS record by its record ID
-   * @param {string} modelId - Model ID
-   * @param {string} recordId - Record ID (e.g. 'rec_abc123')
+   * Fetch a single type CMS document from GitHub
+   * @param {string} modelId - Model ID (e.g. 'privacy_policy', 'cookie_policy', 'terms')
    * @param {Object} [options={}] - Fetch options
-   * @returns {Promise<Object|null>} Found record object or null
+   * @returns {Promise<Object|null>} Single document object or null if not found
    */
-  async getRecord(modelId, recordId, options = {}) {
-    if (!modelId || !recordId) return null;
-    const records = await this.getData(modelId, options);
-    return records.find(r => r.id === recordId) || null;
+  async getDocument(modelId, options = {}) {
+    if (!modelId) return null;
+    const data = await this.getData(modelId, options);
+    if (!data) return null;
+    if (Array.isArray(data)) {
+      return data[0] || null;
+    }
+    return typeof data === 'object' ? data : null;
   }
 
   /**
-   * Search records of a model by query text
+   * Alias for getDocument - fetch a single type CMS document from GitHub
+   * @param {string} modelId - Model ID
+   * @param {Object} [options={}] - Fetch options
+   * @returns {Promise<Object|null>} Single document object or null
+   */
+  async getSingle(modelId, options = {}) {
+    return this.getDocument(modelId, options);
+  }
+
+  /**
+   * Fetch a single CMS record by its record ID (or single document if model is single-type)
+   * @param {string} modelId - Model ID
+   * @param {string} [recordId] - Record ID (e.g. 'rec_abc123'). Optional for single-type models.
+   * @param {Object} [options={}] - Fetch options
+   * @returns {Promise<Object|null>} Found record/document object or null
+   */
+  async getRecord(modelId, recordId, options = {}) {
+    if (!modelId) return null;
+    const data = await this.getData(modelId, options);
+    if (!data) return null;
+
+    if (Array.isArray(data)) {
+      if (!recordId) return data[0] || null;
+      return data.find(r => r.id === recordId) || null;
+    }
+
+    if (typeof data === 'object') {
+      if (!recordId || data.id === recordId) {
+        return data;
+      }
+      return null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Search records of a model by query text (supports both collections and single documents)
    * @param {string} modelId - Model ID
    * @param {string} query - Search query
    * @param {Object} [options={}] - Search and fetch options
@@ -1486,7 +1548,9 @@ class AstraCmsLib {
    * @returns {Promise<Array<Object>>} Matching records
    */
   async searchData(modelId, query = '', options = {}) {
-    const records = await this.getData(modelId, options);
+    const data = await this.getData(modelId, options);
+    const records = Array.isArray(data) ? data : (data && typeof data === 'object' ? [data] : []);
+
     if (!query || typeof query !== 'string' || !query.trim()) {
       return records;
     }
@@ -1520,7 +1584,8 @@ class AstraCmsLib {
    * @returns {Promise<Array<Object>>} Filtered records
    */
   async filterData(modelId, criteria, options = {}) {
-    const records = await this.getData(modelId, options);
+    const data = await this.getData(modelId, options);
+    const records = Array.isArray(data) ? data : (data && typeof data === 'object' ? [data] : []);
     if (!criteria) return records;
 
     if (typeof criteria === 'function') {

@@ -667,6 +667,31 @@ async function runTests() {
     const globalDraftDoc = await draftEnabledCms.getDocument('terms_draft');
     assert.notStrictEqual(globalDraftDoc, null, 'Global includeDrafts should allow draft single documents');
 
+    // 7. Published document with draft edits: default gets published version, includeDrafts gets draft version
+    const mockPublishedDocWithDraft = {
+      id: 'privacy_policy',
+      title: 'Published Privacy Policy v1.0',
+      content: '# Privacy Policy v1.0',
+      _status: 'published',
+      _updatedAt: '2026-09-01T12:00:00.000Z',
+      _draft: {
+        title: 'Draft Privacy Policy v2.0',
+        content: '# Privacy Policy v2.0 (Work in progress)',
+        _status: 'draft',
+        _updatedAt: '2026-09-07T12:00:00.000Z'
+      }
+    };
+    storage.setItem('astra_cms_data_privacy_live', JSON.stringify({ data: mockPublishedDocWithDraft, timestamp: Date.now() }));
+
+    const liveDoc = await cms.getDocument('privacy_live');
+    assert.notStrictEqual(liveDoc, null, 'Should return published document');
+    assert.strictEqual(liveDoc.title, 'Published Privacy Policy v1.0', 'Public consumers must see the published version');
+    assert.strictEqual(liveDoc._draft, undefined, 'Public consumers should not receive internal _draft object');
+
+    const previewDoc = await cms.getDocument('privacy_live', { includeDrafts: true });
+    assert.notStrictEqual(previewDoc, null);
+    assert.strictEqual(previewDoc.title, 'Draft Privacy Policy v2.0', 'Preview mode must see the draft changes');
+
     console.log('✅ CMS Test 7 passed');
   }
 

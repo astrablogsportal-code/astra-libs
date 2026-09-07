@@ -1263,13 +1263,31 @@ class AstraCmsLib {
     return allowedStatuses.includes(itemStatus);
   }
 
-  _filterCmsData(data, allowedStatuses) {
+  _filterCmsData(data, allowedStatuses, options = {}) {
+    const includeDrafts = options.includeDrafts !== undefined ? options.includeDrafts : this.config.includeDrafts;
+
     if (Array.isArray(data)) {
-      return data.filter(record => this._isItemStatusAllowed(record, allowedStatuses));
+      return data
+        .map(record => {
+          if (!record || typeof record !== 'object') return record;
+          if (includeDrafts && record._draft && typeof record._draft === 'object') {
+            return { ...record, ...record._draft };
+          }
+          const { _draft, ...cleanRecord } = record;
+          return cleanRecord;
+        })
+        .filter(record => this._isItemStatusAllowed(record, allowedStatuses));
     }
+
     if (data && typeof data === 'object') {
-      return this._isItemStatusAllowed(data, allowedStatuses) ? data : null;
+      if (includeDrafts && data._draft && typeof data._draft === 'object') {
+        const draftDoc = { ...data, ...data._draft };
+        return this._isItemStatusAllowed(draftDoc, allowedStatuses) ? draftDoc : null;
+      }
+      const { _draft, ...cleanDoc } = data;
+      return this._isItemStatusAllowed(cleanDoc, allowedStatuses) ? cleanDoc : null;
     }
+
     return data;
   }
 
@@ -1499,7 +1517,7 @@ class AstraCmsLib {
     if (useCache && !forceFresh) {
       const cached = this._getFromStorage(cacheKey, this.config.dataCacheTTL);
       if (cached !== null && cached !== undefined) {
-        const filteredCached = this._filterCmsData(cached, allowedStatuses);
+        const filteredCached = this._filterCmsData(cached, allowedStatuses, options);
         const isArr = Array.isArray(filteredCached);
         console.log(`📑 Returning CMS ${isArr ? `${filteredCached.length} records` : (filteredCached ? 'document' : 'null (draft/status filtered)')} for model "${modelId}" from cache`);
         this.emit('cacheHit', cacheKey);
@@ -1526,7 +1544,7 @@ class AstraCmsLib {
       const payload = (data !== null && typeof data === 'object') ? data : (Array.isArray(data) ? data : null);
 
       this._saveToStorage(cacheKey, payload);
-      const filteredPayload = this._filterCmsData(payload, allowedStatuses);
+      const filteredPayload = this._filterCmsData(payload, allowedStatuses, options);
       const isArr = Array.isArray(filteredPayload);
       console.log(`📑 Fetched ${isArr ? `${filteredPayload.length} records` : (filteredPayload ? 'single document' : 'null (draft/status filtered)')} for model "${modelId}" from repository`);
       this.emit('dataLoaded', { modelId, records: filteredPayload, data: filteredPayload, isSingle: !Array.isArray(payload) });
@@ -1538,7 +1556,7 @@ class AstraCmsLib {
       const expired = this._getFromStorage(cacheKey);
       if (expired !== null && expired !== undefined) {
         console.log(`⚠️ Returning expired cached CMS data for "${modelId}" due to fetch error`);
-        return this._filterCmsData(expired, allowedStatuses);
+        return this._filterCmsData(expired, allowedStatuses, options);
       }
       return null;
     }

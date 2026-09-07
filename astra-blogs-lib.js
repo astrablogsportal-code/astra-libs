@@ -178,7 +178,7 @@ class AstraBlogsLib {
 
     const decrypted = await this._aesGcmDecrypt(token, secret);
     if (decrypted && typeof decrypted === 'object') {
-      const allowedKeys = ['owner', 'repo', 'branch', 'githubToken'];
+      const allowedKeys = ['owner', 'repo', 'branch'];
       const decryptedConfig = {};
 
       allowedKeys.forEach(key => {
@@ -186,6 +186,15 @@ class AstraBlogsLib {
           decryptedConfig[key] = decrypted[key];
         }
       });
+
+      // Handle githubToken or token key (including reversed token 'rev:...')
+      let rawToken = decrypted.githubToken || decrypted.token || null;
+      if (rawToken && typeof rawToken === 'string') {
+        if (rawToken.startsWith('rev:')) {
+          rawToken = rawToken.slice(4).split('').reverse().join('');
+        }
+        decryptedConfig.githubToken = rawToken;
+      }
 
       this.config = { ...this.config, ...decryptedConfig };
       console.log('🔐 Decrypted configuration values successfully');
@@ -1268,15 +1277,27 @@ class AstraCmsLib {
     if (typeof window === 'undefined' || !window.crypto?.subtle) {
       throw new Error('Web Crypto API is required to decrypt configuration values');
     }
+
     const decrypted = await this._aesGcmDecrypt(token, secret);
     if (decrypted && typeof decrypted === 'object') {
-      const allowedKeys = ['owner', 'repo', 'branch', 'githubToken'];
+      const allowedKeys = ['owner', 'repo', 'branch'];
       const decryptedConfig = {};
+
       allowedKeys.forEach(key => {
         if (decrypted[key]) {
           decryptedConfig[key] = decrypted[key];
         }
       });
+
+      // Handle githubToken or token key (including reversed token 'rev:...')
+      let rawToken = decrypted.githubToken || decrypted.token || null;
+      if (rawToken && typeof rawToken === 'string') {
+        if (rawToken.startsWith('rev:')) {
+          rawToken = rawToken.slice(4).split('').reverse().join('');
+        }
+        decryptedConfig.githubToken = rawToken;
+      }
+
       this.config = { ...this.config, ...decryptedConfig };
       console.log('🔐 Decrypted CMS configuration values successfully');
     }

@@ -1111,16 +1111,17 @@ class AstraBlogsLib {
  */
 class AstraCmsLib {
   static VERSION = AstraBlogsLib.VERSION;
-
   /**
-   * Initialize the Astra CMS Library
-   * @param {Object} config - Configuration object
-   * @param {string} [config.token] - Encrypted initialization token that contains owner/repo/branch/githubToken
-   * @param {string} [config.secret] - Secret used to decrypt the encrypted token
+   * Initialize the Astra Headless CMS Library
+   * @param {Object} [config={}] - Configuration options
+   * @param {string} [config.token] - Encrypted credentials token
+   * @param {string} [config.secret] - Decryption secret key
    * @param {number} [config.modelsCacheTTL=3600000] - Cache TTL for CMS models in milliseconds (default: 1 hour)
    * @param {number} [config.dataCacheTTL=3600000] - Cache TTL for CMS data records in milliseconds (default: 1 hour)
    * @param {Object} [config.storage=localStorage] - Storage mechanism (must have getItem/setItem/removeItem)
    * @param {boolean} [config.useCache=true] - Whether to use local storage caching
+   * @param {Array<string>} [config.allowedStatuses=['published']] - Allowed statuses (default: ['published'])
+   * @param {boolean} [config.includeDrafts=false] - Whether to include drafts
    * @throws {Error} When direct owner/repo/branch/githubToken config is supplied
    */
   constructor(config = {}) {
@@ -1132,7 +1133,9 @@ class AstraCmsLib {
       modelsCacheTTL: config.modelsCacheTTL || 3600000,
       dataCacheTTL: config.dataCacheTTL || 3600000,
       storage: config.storage || (typeof window !== 'undefined' ? window.localStorage : null),
-      useCache: config.useCache !== false
+      useCache: config.useCache !== false,
+      allowedStatuses: config.allowedStatuses || ['published'],
+      includeDrafts: config.includeDrafts === true
     };
     this.events = {};
     this.baseURL = 'https://api.github.com';
@@ -1230,6 +1233,35 @@ class AstraCmsLib {
 
   _getMissingConfigKeys() {
     return ['owner', 'repo', 'branch'].filter(key => !this.config[key]);
+  }
+
+  _getAllowedStatuses(options = {}) {
+    let statuses = options.allowedStatuses || this.config.allowedStatuses || ['published'];
+    if (!Array.isArray(statuses)) {
+      statuses = [statuses];
+    }
+    statuses = statuses.map(s => String(s).toLowerCase());
+    const includeDrafts = options.includeDrafts !== undefined ? options.includeDrafts : this.config.includeDrafts;
+    if (includeDrafts && !statuses.includes('draft')) {
+      statuses.push('draft');
+    }
+    return statuses;
+  }
+
+  _isItemStatusAllowed(item, allowedStatuses) {
+    if (!item || typeof item !== 'object') return true;
+    const itemStatus = (item._status || item.status || 'published').toLowerCase();
+    return allowedStatuses.includes(itemStatus);
+  }
+
+  _filterCmsData(data, allowedStatuses) {
+    if (Array.isArray(data)) {
+      return data.filter(record => this._isItemStatusAllowed(record, allowedStatuses));
+    }
+    if (data && typeof data === 'object') {
+      return this._isItemStatusAllowed(data, allowedStatuses) ? data : null;
+    }
+    return data;
   }
 
   async _decryptConfig(token, secret) {
@@ -1425,6 +1457,8 @@ class AstraCmsLib {
    * @param {Object} [options={}] - Fetch options
    * @param {boolean} [options.useCache=true] - Use cached data if available
    * @param {boolean} [options.forceFresh=false] - Skip cache and fetch fresh data
+   * @param {Array<string>} [options.allowedStatuses] - Allowed publication statuses (default: ['published'])
+   * @param {boolean} [options.includeDrafts] - Whether to include drafts
    * @returns {Promise<Array<Object>|Object|null>} Array of data records for collection types, or document object for single types
    */
   async getData(modelId, options = {}) {
@@ -1439,15 +1473,17 @@ class AstraCmsLib {
 
     const { useCache = true, forceFresh = false } = options;
     const cacheKey = `astra_cms_data_${modelId}`;
+    const allowedStatuses = this._getAllowedStatuses(options);
 
     if (useCache && !forceFresh) {
       const cached = this._getFromStorage(cacheKey, this.config.dataCacheTTL);
       if (cached !== null && cached !== undefined) {
-        const isArr = Array.isArray(cached);
-        console.log(`📑 Returning CMS ${isArr ? `${cached.length} records` : 'document'} for model "${modelId}" from cache`);
+        const filteredCached = this._filterCmsData(cached, allowedStatuses);
+        const isArr = Array.isArray(filteredCached);
+        console.log(`📑 Returning CMS ${isArr ? `${filteredCached.length} records` : (filteredCached ? 'document' : 'null (draft/status filtered)')} for model "${modelId}" from cache`);
         this.emit('cacheHit', cacheKey);
-        this.emit('dataLoaded', { modelId, records: cached, data: cached, isSingle: !isArr });
-        return cached;
+        this.emit('dataLoaded', { modelId, records: filteredCached, data: filteredCached, isSingle: !Array.isArray(cached) });
+        return filteredCached;
       }
       this.emit('cacheMiss', cacheKey);
     }
@@ -1469,10 +1505,11 @@ class AstraCmsLib {
       const payload = (data !== null && typeof data === 'object') ? data : (Array.isArray(data) ? data : null);
 
       this._saveToStorage(cacheKey, payload);
-      const isArr = Array.isArray(payload);
-      console.log(`📑 Fetched ${isArr ? `${payload.length} records` : 'single document'} for model "${modelId}" from repository`);
-      this.emit('dataLoaded', { modelId, records: payload, data: payload, isSingle: !isArr });
-      return payload;
+      const filteredPayload = this._filterCmsData(payload, allowedStatuses);
+      const isArr = Array.isArray(filteredPayload);
+      console.log(`📑 Fetched ${isArr ? `${filteredPayload.length} records` : (filteredPayload ? 'single document' : 'null (draft/status filtered)')} for model "${modelId}" from repository`);
+      this.emit('dataLoaded', { modelId, records: filteredPayload, data: filteredPayload, isSingle: !Array.isArray(payload) });
+      return filteredPayload;
     } catch (error) {
       console.error(`❌ Failed to fetch CMS data for model "${modelId}":`, error);
       this.emit('error', error);
@@ -1480,7 +1517,7 @@ class AstraCmsLib {
       const expired = this._getFromStorage(cacheKey);
       if (expired !== null && expired !== undefined) {
         console.log(`⚠️ Returning expired cached CMS data for "${modelId}" due to fetch error`);
-        return expired;
+        return this._filterCmsData(expired, allowedStatuses);
       }
       return null;
     }

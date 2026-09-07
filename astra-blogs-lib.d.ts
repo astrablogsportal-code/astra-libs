@@ -666,10 +666,16 @@ export interface AstraCmsConfig {
   storage?: Storage | null;
 
   /**
-   * Enable/disable caching
-   * @default true
+   * Allowed publication statuses to filter CMS records and documents (e.g. ['published', 'draft'])
+   * @default ['published']
    */
-  useCache?: boolean;
+  allowedStatuses?: string[];
+
+  /**
+   * Whether to include draft records/documents (shorthand for adding 'draft' to allowedStatuses)
+   * @default false
+   */
+  includeDrafts?: boolean;
 }
 
 /**
@@ -684,6 +690,8 @@ export interface AstraCmsRuntimeConfig {
   dataCacheTTL: number;
   storage: Storage | null;
   useCache: boolean;
+  allowedStatuses: string[];
+  includeDrafts: boolean;
 }
 
 /**
@@ -701,6 +709,18 @@ export interface CmsFetchOptions {
    * @default false
    */
   forceFresh?: boolean;
+
+  /**
+   * Allowed publication statuses to filter CMS records and documents
+   * @default ['published']
+   */
+  allowedStatuses?: string[];
+
+  /**
+   * Whether to include draft records/documents
+   * @default false
+   */
+  includeDrafts?: boolean;
 }
 
 /**

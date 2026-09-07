@@ -607,6 +607,69 @@ async function runTests() {
     console.log('✅ CMS Test 6 passed');
   }
 
+  // CMS Test 7: Status & Draft Filtering (Single & Collection)
+  {
+    console.log('\nCMS Test 7: Status & Draft Filtering');
+    const storage = createMockStorage();
+
+    const mockDraftSingleDoc = {
+      id: 'terms_draft',
+      title: 'Terms of Service (Work in Progress)',
+      content: '# Terms Draft',
+      _status: 'draft',
+      _updatedAt: '2026-09-07T12:00:00.000Z'
+    };
+
+    const mockCollectionWithStatuses = [
+      { id: 'item_1', name: 'Published Item', status: 'published' },
+      { id: 'item_2', name: 'Draft Item', _status: 'draft' },
+      { id: 'item_3', name: 'No Status Item (Defaults Published)' }
+    ];
+
+    storage.setItem('astra_cms_data_terms_draft', JSON.stringify({ data: mockDraftSingleDoc, timestamp: Date.now() }));
+    storage.setItem('astra_cms_data_collection_status', JSON.stringify({ data: mockCollectionWithStatuses, timestamp: Date.now() }));
+
+    // Default CMS instance (allowedStatuses: ['published'], includeDrafts: false)
+    const cms = new AstraCmsLib({ storage, useCache: true });
+    cms.config.owner = 'test-owner';
+    cms.config.repo = 'test-repo';
+    cms.config.branch = 'main';
+
+    // 1. Single Document draft check: should return null by default
+    const draftDocDefault = await cms.getDocument('terms_draft');
+    assert.strictEqual(draftDocDefault, null, 'Draft single document should be hidden by default');
+
+    // 2. Single Document with includeDrafts: true
+    const draftDocIncluded = await cms.getDocument('terms_draft', { includeDrafts: true });
+    assert.notStrictEqual(draftDocIncluded, null, 'Draft single document should be returned when includeDrafts is true');
+    assert.strictEqual(draftDocIncluded.id, 'terms_draft');
+
+    // 3. Single Document with allowedStatuses: ['draft']
+    const draftDocAllowed = await cms.getDocument('terms_draft', { allowedStatuses: ['draft'] });
+    assert.notStrictEqual(draftDocAllowed, null, 'Draft single document should be returned when draft is in allowedStatuses');
+
+    // 4. Collection draft filtering: item_2 (draft) should be excluded
+    const collectionDefault = await cms.getData('collection_status');
+    assert.strictEqual(collectionDefault.length, 2, 'Should only return 2 items (published & no status)');
+    assert.ok(collectionDefault.some(i => i.id === 'item_1'));
+    assert.ok(collectionDefault.some(i => i.id === 'item_3'));
+    assert.ok(!collectionDefault.some(i => i.id === 'item_2'));
+
+    // 5. Collection with includeDrafts: true
+    const collectionAll = await cms.getData('collection_status', { includeDrafts: true });
+    assert.strictEqual(collectionAll.length, 3, 'Should return all 3 items when includeDrafts is true');
+
+    // 6. Global config override
+    const draftEnabledCms = new AstraCmsLib({ storage, useCache: true, includeDrafts: true });
+    draftEnabledCms.config.owner = 'test-owner';
+    draftEnabledCms.config.repo = 'test-repo';
+    draftEnabledCms.config.branch = 'main';
+    const globalDraftDoc = await draftEnabledCms.getDocument('terms_draft');
+    assert.notStrictEqual(globalDraftDoc, null, 'Global includeDrafts should allow draft single documents');
+
+    console.log('✅ CMS Test 7 passed');
+  }
+
   console.log('\n🎉 All AstraBlogsLib and AstraCmsLib tests passed successfully!');
 }
 
